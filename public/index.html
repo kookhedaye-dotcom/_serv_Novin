@@ -1,0 +1,1577 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>پیام‌رسان</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@400;600;700&display=swap" rel="stylesheet">
+<script src="/socket.io/socket.io.js"></script>
+<style>
+:root{--acc:#3390ec;--side:#fff;--bg:#d6e4cb;--in:#fff;--out:#eeffde;--txt:#000;--sub:#707579;--line:#e7e7e7;--hover:#f4f4f5;--input:#f4f4f5}
+@media(prefers-color-scheme:dark){:root{--acc:#8774e1;--side:#212121;--bg:#0f0f0f;--in:#212121;--out:#766ac8;--txt:#fff;--sub:#aaa;--line:#303030;--hover:#2c2c2c;--input:#2c2c2c}}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{height:100%;margin:0}
+body{font-family:system-ui,-apple-system,"Segoe UI",Tahoma,Vazirmatn,sans-serif;background:var(--side);color:var(--txt);font-size:15px}
+button,input,textarea{font:inherit;color:inherit}
+.hide{display:none!important}
+/* auth */
+#auth{min-height:100%;display:flex;align-items:center;justify-content:center;padding:20px;background:var(--side)}
+.box{width:100%;max-width:360px;text-align:center}
+.logo{width:110px;height:110px;border-radius:50%;background:var(--acc);margin:0 auto 18px;display:grid;place-items:center}
+.logo svg{width:56px;height:56px;fill:#fff}
+h1{margin:0 0 6px;font-size:26px}
+.box p{color:var(--sub);margin:0 0 22px}
+.tabs{display:flex;border-bottom:1px solid var(--line);margin-bottom:18px}
+.tabs button{flex:1;background:none;border:0;padding:12px;color:var(--sub);border-bottom:2px solid transparent;cursor:pointer}
+.tabs button.on{color:var(--acc);border-color:var(--acc)}
+.f{width:100%;padding:13px 14px;border:1px solid var(--line);border-radius:12px;background:transparent;margin-bottom:12px;outline:0;text-align:right}
+.f:focus{border-color:var(--acc)}
+.cty{display:flex;gap:8px;margin-bottom:14px}
+.cty label{flex:1;border:1px solid var(--line);border-radius:12px;padding:10px 4px;cursor:pointer;font-size:13px}
+.cty input{display:none}
+.cty label:has(input:checked){border-color:var(--acc);background:color-mix(in srgb,var(--acc) 12%,transparent)}
+.cty b{display:block;direction:ltr;color:var(--sub);font-weight:400;margin-top:2px}
+.btn{width:100%;padding:13px;border:0;border-radius:12px;background:var(--acc);color:#fff;cursor:pointer;font-weight:600}
+.err{color:#e53935;min-height:20px;font-size:13px;margin-top:10px}
+/* app */
+#app{height:100%;display:flex;overflow:hidden}
+.side{width:380px;max-width:100%;border-inline-end:1px solid var(--line);display:flex;flex-direction:column;background:var(--side);flex:none}
+.top{display:flex;align-items:center;gap:8px;padding:8px 10px}
+.me{border:0;background:none;padding:0;cursor:pointer}
+.search{flex:1;padding:10px 16px;border:0;border-radius:22px;background:var(--input);outline:0;text-align:right}
+.list{flex:1;overflow-y:auto}
+.hdr{padding:10px 16px;color:var(--acc);font-weight:600;font-size:14px}
+.row{display:flex;gap:12px;padding:9px 12px;cursor:pointer;align-items:center;border-radius:10px;margin:0 6px}
+.row:hover,.row.on{background:var(--hover)}
+.row.on{background:var(--acc);color:#fff}.row.on .sub,.row.on .tm{color:#ffffffcc}
+.av{width:52px;height:52px;border-radius:50%;color:#fff;display:grid;place-items:center;font-weight:600;font-size:20px;flex:none;position:relative}
+.av.sm{width:42px;height:42px;font-size:17px}
+.dot{position:absolute;bottom:1px;inset-inline-start:1px;width:13px;height:13px;border-radius:50%;background:#4cd964;border:2px solid var(--side)}
+.mid{flex:1;min-width:0}
+.l1,.l2{display:flex;justify-content:space-between;gap:8px;align-items:center}
+.nm{font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.tm,.sub{color:var(--sub);font-size:13px}
+.sub{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;unicode-bidi:plaintext}
+.bdg{background:var(--acc);color:#fff;border-radius:12px;min-width:22px;height:22px;padding:0 7px;display:grid;place-items:center;font-size:13px;font-weight:600}
+.empty{color:var(--sub);text-align:center;padding:40px 24px;line-height:1.9}
+.main{flex:1;display:flex;flex-direction:column;min-width:0;background:var(--bg)}
+.chead{display:flex;align-items:center;gap:10px;padding:7px 12px;background:var(--side);border-bottom:1px solid var(--line)}
+.back{display:none;border:0;background:none;font-size:24px;cursor:pointer;color:var(--sub)}
+.st{font-size:13px;color:var(--sub)}.st.on{color:var(--acc)}
+#msgs{flex:1;overflow-y:auto;padding:10px 12px;display:flex;flex-direction:column;gap:3px;direction:ltr}
+.day{align-self:center;background:#0000004d;color:#fff;border-radius:14px;padding:3px 12px;font-size:13px;margin:8px 0}
+.b{max-width:min(75%,520px);padding:6px 10px 5px;border-radius:14px;background:var(--in);box-shadow:0 1px 1px #0002;word-wrap:break-word;white-space:pre-wrap;line-height:1.4}
+.b.out{align-self:flex-end;background:var(--out);border-end-end-radius:4px}
+.b.inn{align-self:flex-start;border-end-start-radius:4px}
+.b span{unicode-bidi:plaintext}
+.b i{float:right;margin:6px 0 0 10px;font-style:normal;font-size:11px;color:var(--sub);direction:ltr}
+.b.out i{color:#4fae4e}.ok{color:#3390ec}
+.b.out .ok{color:#3390ec}
+.comp{display:flex;gap:8px;padding:8px 12px;align-items:flex-end;background:var(--bg)}
+.comp textarea{flex:1;resize:none;border:0;border-radius:22px;padding:12px 18px;background:var(--side);outline:0;max-height:140px;text-align:right;line-height:1.3}
+.send{width:46px;height:46px;border-radius:50%;border:0;background:var(--acc);cursor:pointer;display:grid;place-items:center;flex:none}
+.send svg{width:22px;height:22px;fill:#fff;transform:scaleX(-1)}
+.none{flex:1;display:grid;place-items:center;color:#fff}
+.none span{background:#0000004d;border-radius:16px;padding:4px 14px;font-size:14px}
+#modal{position:fixed;inset:0;background:#0008;display:grid;place-items:center;padding:20px;z-index:9}
+.card{background:var(--side);border-radius:16px;padding:26px;width:100%;max-width:340px;text-align:center}
+.card .av{margin:0 auto 12px;width:80px;height:80px;font-size:32px}
+.num{direction:ltr;unicode-bidi:embed;font-size:22px;font-weight:700;color:var(--acc);margin:10px 0}
+.card .btn{margin-top:10px}.card .btn.g{background:var(--input);color:var(--txt)}
+@media(max-width:760px){.side{width:100%}.main{position:fixed;inset:0;transform:translateX(-100%);transition:transform .2s;z-index:5}
+#app.open .main{transform:none}.back{display:block}}
+@media(prefers-reduced-motion:reduce){.main{transition:none}}
+.prem{color:#f5a623;font-size:.9em}
+#admin{max-width:720px;margin:0 auto;padding:14px}
+.ahd{display:flex;gap:10px;align-items:center;margin-bottom:12px}.ahd h2{margin:0;flex:1}
+.ac{border:1px solid var(--line);border-radius:14px;padding:12px;margin-top:10px}.ac.bn{opacity:.6}
+.al{display:flex;gap:10px;align-items:center}.stz{font-weight:600}
+.ab{display:flex;gap:6px;flex-wrap:wrap;margin-top:10px}
+.ab button{border:0;border-radius:8px;padding:8px 12px;background:var(--input);cursor:pointer}
+.ab input{width:90px;border:1px solid var(--line);border-radius:8px;padding:6px 8px;background:transparent}
+#posts{flex:1;overflow-y:auto;padding:10px 12px;display:flex;flex-direction:column;gap:8px}
+.post{width:min(100%,560px);align-self:center;background:var(--in);border-radius:14px;padding:10px 12px;box-shadow:0 1px 1px #0002}
+.pt{white-space:pre-wrap;line-height:1.5;word-wrap:break-word;unicode-bidi:plaintext}
+.pm{color:var(--sub);font-size:12px;margin-top:4px}
+.rxs{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
+.rx{border:0;border-radius:14px;padding:5px 10px;background:var(--input);cursor:pointer;font-size:15px}
+.rx.mine{background:color-mix(in srgb,var(--acc) 25%,transparent);outline:1px solid var(--acc)}.rx.lock{opacity:.55}
+.pill{border:0;border-radius:16px;padding:7px 16px;background:var(--acc);color:#fff;cursor:pointer;flex:none}
+.day{text-align:center;max-width:90%}
+.toast{position:fixed;bottom:80px;left:50%;transform:translateX(-50%);background:#000c;color:#fff;padding:10px 16px;border-radius:20px;z-index:20}
+.pcard{padding:0!important;overflow:hidden;text-align:right;max-width:380px!important}
+.phead{padding:26px 16px 18px;text-align:center;color:#fff}
+.card .av.big{width:96px;height:96px;font-size:38px;margin:0 auto 10px;border:3px solid #fff8}
+.pn{font-size:20px;font-weight:700}.ps{font-size:13px;opacity:.85;margin-top:2px}
+.pbody{padding:6px 0}.prow{padding:10px 20px;border-bottom:1px solid var(--line)}.prow:last-child{border:0}
+.pv{font-size:16px;word-break:break-word}.pl{font-size:13px;color:var(--sub);margin-top:2px}
+.num2{direction:ltr;unicode-bidi:embed;display:inline-block}
+.lvl{display:inline-block;background:color-mix(in srgb,var(--acc) 18%,transparent);color:var(--acc);border-radius:10px;padding:1px 9px;font-size:13px;font-weight:600;margin-inline-start:6px}
+.pact{padding:6px 16px 16px}
+#ch{cursor:pointer}
+.side{position:relative}.list{padding-bottom:76px}
+.fab{position:absolute;bottom:18px;inset-inline-end:18px;border:0;border-radius:26px;padding:13px 20px;background:var(--acc);color:#fff;font-weight:600;box-shadow:0 3px 10px #0004;cursor:pointer;z-index:2}
+
+/* ---------- polish ---------- */
+body{font-family:Vazirmatn,system-ui,-apple-system,"Segoe UI",Tahoma,sans-serif;-webkit-font-smoothing:antialiased}
+*{scrollbar-width:thin;scrollbar-color:#8886 transparent}
+#auth{background:radial-gradient(1000px 520px at 85% -10%,color-mix(in srgb,var(--acc) 26%,transparent),transparent),radial-gradient(800px 460px at 0% 110%,color-mix(in srgb,var(--acc) 16%,transparent),transparent),var(--side)}
+.box{background:var(--side);border-radius:26px;padding:32px 26px;box-shadow:0 10px 40px #0000001f;border:1px solid var(--line)}
+.logo{background:linear-gradient(135deg,color-mix(in srgb,var(--acc) 65%,#fff),var(--acc));box-shadow:0 8px 24px color-mix(in srgb,var(--acc) 45%,transparent)}
+.f{transition:border-color .15s,box-shadow .15s}.f:focus{box-shadow:0 0 0 3px color-mix(in srgb,var(--acc) 22%,transparent)}
+.btn,.pill,.send,.fab,.rx,.ab button{transition:transform .12s,filter .15s,box-shadow .15s,background .15s}
+.btn{background:linear-gradient(180deg,color-mix(in srgb,var(--acc) 86%,#fff),var(--acc));box-shadow:0 2px 8px color-mix(in srgb,var(--acc) 35%,transparent)}
+.btn.g{box-shadow:none;background:var(--input)}
+.btn:hover,.pill:hover{filter:brightness(1.08)}.btn:active,.pill:active,.send:active,.fab:active{transform:scale(.96)}
+.av::after{content:'';position:absolute;inset:0;border-radius:inherit;background:linear-gradient(135deg,#ffffff40,#00000014);pointer-events:none}
+.side{position:relative;box-shadow:1px 0 8px #00000008}
+.top{position:sticky;top:0;background:var(--side);z-index:1}
+.search{transition:box-shadow .15s,background .15s}.search:focus{background:var(--side);box-shadow:0 0 0 2px var(--acc)}
+.tabs button{transition:color .15s,border-color .15s;font-weight:600}
+.row{transition:background .15s}
+.main{background-image:radial-gradient(#ffffff2e 1.5px,transparent 2px);background-size:26px 26px}
+@media(prefers-color-scheme:dark){.main{background-image:radial-gradient(#ffffff10 1.5px,transparent 2px)}}
+.chead{box-shadow:0 1px 8px #0000000d;position:relative;z-index:1}
+.b{box-shadow:0 1px 2px #00000026;border-radius:16px}
+.b.out{background:linear-gradient(180deg,color-mix(in srgb,var(--out) 90%,#fff),var(--out))}
+.day{backdrop-filter:blur(6px);font-weight:600}
+.comp textarea{box-shadow:0 1px 3px #0000001a;transition:box-shadow .15s}.comp textarea:focus{box-shadow:0 0 0 2px var(--acc)}
+.send,.fab{background:linear-gradient(135deg,color-mix(in srgb,var(--acc) 72%,#fff),var(--acc));box-shadow:0 3px 10px color-mix(in srgb,var(--acc) 45%,transparent)}
+.send:hover{transform:scale(1.07)}.fab:hover{transform:translateY(-2px)}
+/* posts & reactions */
+.post{border-radius:18px;box-shadow:0 2px 8px #0000001a;padding:12px 14px}
+.rxs{gap:8px}
+.rx{padding:6px 12px;border-radius:16px;font-size:16px;box-shadow:inset 0 0 0 1px var(--line)}
+.rx:hover{transform:translateY(-1px);box-shadow:inset 0 0 0 1px var(--acc)}
+.rx b{font-size:13px;margin-inline-start:2px}
+.rx[data-k="⭐"]{background:linear-gradient(180deg,#fff4cc,#ffe08a);color:#6b4a00;box-shadow:inset 0 0 0 1px #f5c542}
+@media(prefers-color-scheme:dark){.rx[data-k="⭐"]{background:linear-gradient(180deg,#5a4a1a,#4a3a10);color:#ffe08a}}
+.rx.mine{outline:0;box-shadow:0 0 0 2px var(--acc),0 0 14px color-mix(in srgb,var(--acc) 40%,transparent)}
+.rx[data-k="⭐"].mine{box-shadow:0 0 0 2px #f5a300,0 0 14px #ffc10077}
+.rx.lock{filter:grayscale(.6)}
+.rx.pop{animation:rxpop .38s ease}.rx.shake{animation:shake .3s}
+@keyframes rxpop{40%{transform:scale(1.35)}}
+@keyframes shake{25%{transform:translateX(-4px)}75%{transform:translateX(4px)}}
+.fly{position:fixed;z-index:30;pointer-events:none;text-align:center;animation:fly 1.25s cubic-bezier(.2,.8,.3,1) forwards}
+.fly b{display:block;font-size:24px;color:#ffca28;text-shadow:0 2px 6px #000a,0 0 14px #ff8f0099}
+.fly span{display:block;font-size:12px;color:#fff;background:#000b;border-radius:10px;padding:2px 9px;margin-top:2px;white-space:nowrap}
+@keyframes fly{0%{opacity:0;transform:translate(-50%,10px) scale(.6)}15%{opacity:1;transform:translate(-50%,-10px) scale(1.15)}100%{opacity:0;transform:translate(-50%,-78px) scale(1)}}
+.spark{position:fixed;z-index:29;pointer-events:none;color:#ffc107;font-style:normal;font-size:15px;animation:spark .8s ease-out forwards}
+@keyframes spark{from{opacity:1;transform:translate(-50%,0) scale(1)}to{opacity:0;transform:translate(calc(-50% + var(--dx)),var(--dy)) scale(.4)}}
+/* animated reactions */
+.em{display:inline-block;transform-origin:50% 60%;will-change:transform}
+.e-lol{--a:rxlol}.e-hrt{--a:rxhrt}.e-fire{--a:rxfire;transform-origin:50% 90%}.e-up{--a:rxup;transform-origin:30% 80%}.e-wow{--a:rxwow}.e-party{--a:rxparty;transform-origin:20% 85%}.e-star{--a:rxstar}
+.rx.mine .em,.mrc.mine .em{animation:var(--a) 2.2s ease-in-out infinite}
+.rx:hover .em,.mrc:hover .em,.pk:hover .em{animation:var(--a) .8s ease-in-out infinite}
+.rx.pop .em{animation:var(--a) .7s ease-in-out 2}
+@keyframes rxlol{0%,100%{transform:none}10%{transform:translateY(-3px) rotate(-14deg) scale(1.2)}25%{transform:translateY(0) rotate(12deg) scale(1.2)}40%{transform:translateY(-2px) rotate(-10deg) scale(1.15)}55%{transform:rotate(8deg) scale(1.1)}70%{transform:rotate(-4deg)}}
+@keyframes rxhrt{0%,100%{transform:scale(1)}14%{transform:scale(1.3)}28%{transform:scale(1)}42%{transform:scale(1.22)}70%{transform:scale(1)}}
+@keyframes rxfire{0%,100%{transform:none}25%{transform:scale(.92,1.15) rotate(-5deg)}50%{transform:scale(1.08,.94) rotate(4deg)}75%{transform:scale(.95,1.1) rotate(-3deg)}}
+@keyframes rxup{0%,100%{transform:none}30%{transform:rotate(-24deg) translateY(-2px) scale(1.18)}60%{transform:rotate(8deg) scale(1.05)}}
+@keyframes rxwow{0%,100%{transform:scale(1)}30%{transform:scale(1.38)}55%{transform:scale(.94)}75%{transform:scale(1.12)}}
+@keyframes rxparty{0%,100%{transform:none}20%{transform:rotate(-20deg) scale(1.25)}40%{transform:rotate(16deg) scale(1.25)}60%{transform:rotate(-8deg) scale(1.1)}80%{transform:rotate(4deg)}}
+@keyframes rxstar{0%{transform:rotate(0) scale(1)}50%{transform:rotate(180deg) scale(1.28)}100%{transform:rotate(360deg) scale(1)}}
+#rxpop .pk{animation:pkin .32s cubic-bezier(.2,.9,.3,1.3) backwards}
+#rxpop .pk:nth-child(2){animation-delay:.03s}#rxpop .pk:nth-child(3){animation-delay:.06s}#rxpop .pk:nth-child(4){animation-delay:.09s}#rxpop .pk:nth-child(5){animation-delay:.12s}#rxpop .pk:nth-child(6){animation-delay:.15s}#rxpop .pk:nth-child(n+7){animation-delay:.18s}
+@keyframes pkin{from{opacity:0;transform:translateY(10px) scale(.4)}}
+.bp{position:fixed;z-index:31;pointer-events:none;font-style:normal;line-height:1;animation:bp 1.05s cubic-bezier(.2,.7,.3,1) both}
+.bp .em,.bp .cem{animation:none!important}.bp img{width:1em;height:1em}
+@keyframes bp{0%{opacity:0;transform:translate(-50%,-50%) scale(.3) rotate(0)}15%{opacity:1;transform:translate(-50%,-50%) scale(1.25)}100%{opacity:0;transform:translate(calc(-50% + var(--dx)),calc(-50% + var(--dy))) scale(.9) rotate(var(--rot))}}
+/* overlays */
+#modal{backdrop-filter:blur(4px);animation:fade .15s}
+.card{box-shadow:0 20px 60px #0006;animation:cardin .22s cubic-bezier(.2,.9,.3,1.2)}
+@keyframes fade{from{opacity:0}}@keyframes cardin{from{opacity:0;transform:translateY(14px) scale(.96)}}
+.toast{backdrop-filter:blur(8px);background:#000d;box-shadow:0 6px 24px #0005;font-weight:600;animation:toastin .2s}
+@keyframes toastin{from{opacity:0;transform:translate(-50%,10px)}}
+.phead{position:relative}.phead::after{content:'';position:absolute;inset:0;background:radial-gradient(circle at 30% 0,#ffffff33,transparent 60%);pointer-events:none}
+.phead>*{position:relative;z-index:1}
+.ac{transition:box-shadow .15s}.ac:hover{box-shadow:0 4px 16px #0000001a}.ab button:hover{background:var(--acc);color:#fff}
+@media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+
+/* telegram-style profile */
+.pcard{max-width:400px!important}
+.phead{background:var(--side)!important;color:var(--txt)!important;padding:18px 16px 16px;border-bottom:8px solid var(--input)}
+.phead::after{display:none!important}
+.pbar{display:flex;gap:4px;justify-content:flex-start;margin:-6px -6px 0;min-height:36px}
+.pib{background:none;border:0;color:var(--sub);cursor:pointer;width:36px;height:36px;border-radius:50%;display:grid;place-items:center;padding:0}
+.pib:hover{background:var(--hover);color:var(--txt)}
+.pcard .av.big{border:0;width:100px;height:100px;font-size:40px;margin:0 auto 12px}
+.pn{font-size:20px;font-weight:700}
+.ps{display:flex;align-items:center;justify-content:center;gap:8px;color:var(--sub);opacity:1;font-size:14px;margin-top:4px}
+.lvlb{display:inline-flex;align-items:center;gap:3px;color:var(--acc);font-weight:700;direction:ltr}
+.lvlb b{font-size:13px}
+.pcard .pbody{padding:4px 0}
+.pcard .prow{display:flex;align-items:center;gap:12px;padding:12px 20px;border-bottom:0}
+.ptxt{flex:1;min-width:0}
+.pcard .pv{font-size:16px}
+.pcard .pl{font-size:13px;color:var(--sub);margin-top:3px}
+.pstory{border-top:8px solid var(--input);padding:48px 20px;text-align:center;color:var(--sub);font-size:14px}
+.pcard .pact{padding:0 16px 16px}
+
+/* gifts */
+.giftb{width:46px;height:46px;border-radius:50%;border:0;background:var(--side);cursor:pointer;font-size:22px;flex:none;box-shadow:0 1px 3px #0000001a}
+.giftb:hover{background:var(--hover)}
+.gmsg{align-self:center;direction:rtl;text-align:center;background:#0000004d;backdrop-filter:blur(6px);color:#fff;border-radius:18px;padding:14px 22px;margin:8px 0;min-width:190px;max-width:80%}
+.gem{font-size:54px;line-height:1.1}.gem.big{font-size:72px}
+.gt{font-weight:700;margin-top:4px}.gsub{font-size:13px;opacity:.85;margin-top:2px}
+.gnote{margin:8px 0 2px;font-size:14px;word-break:break-word;unicode-bidi:plaintext}
+.gbtn{margin-top:10px;border:0;border-radius:14px;padding:7px 16px;background:#fff;color:#000;cursor:pointer;font-weight:600}
+.gd .gnote{color:var(--txt)}
+.pgs{border-top:8px solid var(--input);padding:12px 20px 14px}
+.pgh{font-weight:700;margin-bottom:8px}.pgh span{color:var(--sub);font-weight:400}
+.pgg{display:flex;flex-wrap:wrap;gap:8px}
+.gtile{width:72px;border:0;border-radius:14px;background:var(--input);color:var(--txt);cursor:pointer;padding:8px 0 6px;display:grid;justify-items:center;gap:2px}
+.gtile span{font-size:32px;line-height:1.1}.gtile b{font-size:12px;color:var(--sub)}.gtile.dim{opacity:.45}.gtile:hover{background:var(--hover)}
+.ggrid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:6px}
+.gopt{border:1px solid var(--line);border-radius:14px;background:transparent;color:var(--txt);cursor:pointer;padding:10px 4px;display:grid;justify-items:center;gap:2px}
+.gopt:hover{border-color:var(--acc);background:var(--hover)}
+.gopt span{font-size:34px;line-height:1.1}.gopt i{font-style:normal;font-size:13px}.gopt b{font-size:13px;color:var(--acc)}
+.gshop,.gd{text-align:center}
+.pcard .pstory{border-top-width:8px}
+
+/* scrollable modal cards */
+.card{max-height:calc(100dvh - 40px);max-height:calc(100vh - 40px);overflow-y:auto;overscroll-behavior:contain}
+@supports(height:100dvh){.card{max-height:calc(100dvh - 40px)}}
+.pcard{overflow-y:auto!important}
+.pcard .pstory{padding:28px 20px}
+.pcard .pact{position:sticky;bottom:0;background:var(--side);padding-top:10px;border-top:1px solid var(--line)}
+
+/* remember + limited */
+.rmb{display:flex;align-items:center;gap:8px;font-size:14px;color:var(--sub);margin:-2px 2px 12px;cursor:pointer}
+.rmb input{width:16px;height:16px;accent-color:var(--acc)}
+.lmt{display:inline-block;margin-top:4px;padding:2px 10px;border-radius:10px;background:#ffffff33;font-size:12px;font-weight:700;letter-spacing:.2px}
+.lmt.on{background:color-mix(in srgb,var(--acc) 18%,transparent);color:var(--acc)}
+.gsec{text-align:right;font-weight:700;font-size:14px;margin:6px 2px 8px}
+.gopt.lim{border:0;color:#fff}.gopt.lim b{color:#fff}.gopt.lim em{font-style:normal;font-size:11px;opacity:.9}
+.gopt.lim:disabled{opacity:.45;cursor:not-allowed}
+.alf{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:8px}.alf .f{flex:1;min-width:110px;margin-bottom:0}
+.alf input[type=color]{width:46px;height:46px;border:0;background:none;padding:0;cursor:pointer}
+.ali{display:flex;align-items:center;gap:10px;padding:8px 0;border-top:1px solid var(--line)}
+.alie{width:42px;height:42px;border-radius:12px;display:grid;place-items:center;font-size:24px;flex:none}
+.alb{border:0;border-radius:10px;padding:7px 12px;background:var(--input);color:var(--txt);cursor:pointer}
+
+/* premium */
+.row.on .nmc{color:#fff!important}
+.pcol .nmc{color:#fff!important}.pcol .ps,.pcol .pib{color:#ffffffd0}.pcol .lvlb{color:#fff}.pcol .pib:hover{background:#ffffff26;color:#fff}
+.prem{font-size:.95em}
+.psec{border:1px solid var(--line);border-radius:14px;padding:12px;margin:2px 0 12px;text-align:right}
+.psec.lockd{background:color-mix(in srgb,var(--acc) 8%,transparent)}
+.pst{font-weight:700;margin-bottom:6px}
+.sw{display:flex;flex-wrap:wrap;gap:8px;margin-top:6px}
+.swb{width:30px;height:30px;border-radius:50%;border:2px solid transparent;cursor:pointer;color:var(--sub);font-size:13px;padding:0}
+.swb.none{background:var(--input)}.swb.on{border-color:var(--txt);box-shadow:0 0 0 2px var(--side) inset}
+.emo{display:flex;flex-wrap:wrap;gap:6px}.eb{border:0;border-radius:10px;background:var(--input);font-size:20px;padding:4px 8px;cursor:pointer}.eb:hover{background:var(--hover)}
+.prm{text-align:center}.pfe{list-style:none;margin:10px 0 0;padding:0;text-align:right;font-size:14px;line-height:2}
+.plan{margin-top:8px}.plan:disabled{opacity:.6}
+
+/* telegram-style gift sheet */
+.gcardm{text-align:right;max-width:380px!important}
+.gsheet{text-align:center}
+.gtop{border-radius:16px;padding:18px 10px 14px;margin:-6px -6px 4px}
+.gem.huge{font-size:96px;line-height:1.15}
+.gtop{position:relative;overflow:hidden}.gtop>*:not(.gpat){position:relative}
+.gpat{position:absolute!important;inset:0;pointer-events:none}.gpat span{position:absolute;font-size:22px;opacity:.17;transform:translate(-50%,-50%)}
+.gtitle.w{color:#fff;margin:6px 0 2px;text-shadow:0 1px 6px #0004}.gsn{font-weight:600;opacity:.75;font-size:15px}
+.gmod{color:#ffffffd9;font-size:15px;padding-bottom:4px}
+.pc{display:inline-block;margin-inline-start:6px;padding:1px 8px;border-radius:9px;font-size:12px;font-weight:700;background:color-mix(in srgb,var(--acc) 18%,transparent);color:var(--acc)}
+.gbd{display:inline-block;width:12px;height:12px;border-radius:50%;vertical-align:-1px;margin-inline-end:6px}
+.gsheet .lmt{background:#ffffff33;color:#fff;margin-top:2px}
+.gtitle{margin:10px 0 12px;font-size:18px}
+.gtbl{border:1px solid var(--line);border-radius:12px;overflow:hidden;text-align:right;direction:rtl}
+.gtr{display:flex;border-bottom:1px solid var(--line)}
+.gtl{flex:0 0 34%;padding:11px 14px;font-weight:700;background:var(--input);border-inline-end:1px solid var(--line);font-size:14px}
+.gtv{flex:1;padding:11px 14px;font-size:14px;min-width:0;word-break:break-word}
+.gfrom{display:inline-flex;align-items:center;gap:8px}
+.card .av.xs{width:24px;height:24px;font-size:12px;margin:0;flex:none}
+.gtn{padding:11px 14px;font-size:14px;word-break:break-word;unicode-bidi:plaintext}
+.gtos{color:var(--sub);font-size:13px;margin:14px 0 4px}
+.gtbl>.gtr:last-child{border-bottom:0}
+.gmsg{cursor:pointer}
+.pimg{display:block;width:100%;max-height:440px;object-fit:cover;border-radius:12px;margin:0 0 8px;cursor:zoom-in;background:var(--side)}
+.cprev{display:flex;align-items:center;gap:10px;padding:8px 12px;background:var(--bg);border-top:1px solid var(--side)}
+.cprev img{height:56px;width:56px;object-fit:cover;border-radius:10px}.cprev button{border:0;background:var(--side);border-radius:50%;width:28px;height:28px;cursor:pointer;color:var(--sub)}
+.cprev.hide{display:none}
+#chh{cursor:pointer}
+.chd{white-space:pre-wrap;text-align:center;margin:10px 0;color:var(--txt);line-height:1.5;unicode-bidi:plaintext}
+.card.lbx{max-width:min(94vw,900px);padding:12px}
+.av.ph{cursor:pointer;display:grid;place-items:center;font-size:30px;margin:0 auto 10px;width:96px;height:96px;background:var(--acc)}
+/* telegram-style channel */
+#posts{gap:4px;padding:10px 12px 14px;background:var(--bg)}
+#posts .post{align-self:flex-start;width:auto;min-width:150px;max-width:min(92%,480px);border-radius:14px;padding:6px 10px 5px;box-shadow:0 1px 2px #0003;margin:2px 0}
+#posts .pimg{width:calc(100% + 20px);margin:-6px -10px 6px;border-radius:14px 14px 4px 4px;max-height:420px}
+#posts .pt{font-size:15px;line-height:1.45}
+.pf{display:flex;justify-content:flex-end;gap:10px;color:var(--sub);font-size:12px;margin-top:2px}
+.pf .v{margin-inline-end:auto}
+#posts .rxs{gap:5px;margin-top:6px}
+#posts .rx{padding:3px 9px;font-size:14px;border-radius:14px;box-shadow:none;background:color-mix(in srgb,var(--acc) 14%,transparent);color:var(--txt)}
+#posts .rx.add{color:var(--sub);background:var(--input);padding:3px 10px}
+#posts .rx.mine{background:var(--acc);color:#fff;box-shadow:none}
+#posts .rx.mine b{color:#fff}
+#posts .rx[data-k="⭐"]{background:linear-gradient(180deg,#fff4cc,#ffe08a);color:#6b4a00}
+#posts .rx:hover{transform:none;filter:brightness(.96)}
+.rxpick{display:flex;flex-wrap:wrap;gap:4px;margin-top:6px;padding:6px;border-radius:12px;background:var(--input)}
+.rxpick .rx{background:transparent!important;font-size:20px;padding:4px 6px!important}
+.rxpick .hint{width:100%;font-size:11px;color:var(--sub);padding:0 4px 2px}
+.chintro{align-self:center;text-align:center;max-width:420px;margin:6px 0 10px;padding:14px 18px;border-radius:16px;background:#0000004d;color:#fff;backdrop-filter:blur(6px)}
+.chintro .av{margin:0 auto 8px;width:64px;height:64px;font-size:26px}
+.chintro b{display:block;font-size:16px}.chintro span{display:block;font-size:13px;opacity:.85;margin-top:3px;white-space:pre-wrap;unicode-bidi:plaintext}
+#posts .gmsg{align-self:center}
+.jbar{background:var(--side);border-top:1px solid var(--line);padding:2px}
+.jbar.hide{display:none}
+.jbar button{width:100%;border:0;background:transparent;color:var(--acc);font-weight:700;font-size:15px;padding:13px;cursor:pointer;letter-spacing:.2px}
+.jbar button:hover{background:var(--hover)}.jbar button.leave{color:var(--sub);font-weight:500}
+.spon{font-size:11px;background:color-mix(in srgb,var(--acc) 16%,transparent);color:var(--acc);border-radius:8px;padding:1px 7px;margin-inline-start:6px;font-weight:600;flex:none}
+.row.on .spon{background:#fff3;color:#fff}
+.chg{display:flex;gap:8px;align-items:center;margin-top:10px}.chg .ab{margin:0}
+.ab button.on{background:var(--acc);color:#fff}
+#rxpop{position:fixed;z-index:8;background:var(--side);border-radius:18px;box-shadow:0 8px 30px #0005;padding:8px;max-width:min(320px,calc(100vw - 16px));animation:fade .12s}
+#rxpop .pkh{font-size:11px;color:var(--sub);padding:0 5px 4px;line-height:1.5}
+#rxpop .pkg{display:flex;flex-wrap:wrap;gap:2px}
+.pk{border:0;background:transparent;font-size:24px;width:40px;height:40px;border-radius:12px;cursor:pointer;transition:transform .1s,background .1s}
+.pk:hover{background:var(--hover);transform:scale(1.18)}.pk.mine{background:color-mix(in srgb,var(--acc) 25%,transparent)}.pk.lock{opacity:.4}
+#posts .post{cursor:pointer}#posts .rxs:empty{display:none}
+
+/* ---- admin (tidy) ---- */
+#admin{padding:0 14px 40px}
+.ahd{position:sticky;top:0;z-index:5;background:var(--side);padding:12px 0;margin:0 0 6px;border-bottom:1px solid var(--line)}
+.ahd .pill{text-decoration:none;font-size:13px;padding:6px 12px}
+.alo{background:none;border:0;color:#e53935;cursor:pointer;font:inherit}
+#apers{background:#fde0e0;color:#b71c1c;border-radius:10px;padding:10px;margin:10px 0;font-size:14px}
+.astats{display:grid;grid-template-columns:repeat(auto-fit,minmax(96px,1fr));gap:8px;margin:12px 0}
+.astat{background:var(--input);border-radius:12px;padding:10px 12px}.astat b{display:block;font-size:20px}.astat span{font-size:12px;color:var(--sub)}
+.atabs{margin-bottom:12px;position:sticky;top:57px;z-index:4;background:var(--side)}
+.apane #aq{width:100%;box-sizing:border-box;margin-bottom:4px}
+.apane .ac{margin-top:8px}
+.tg{display:inline-block;font-size:11px;border-radius:8px;padding:1px 7px;margin-inline-end:4px;background:var(--input);color:var(--sub)}
+.tg.pr{background:#f5a62326;color:#c77c00}.tg.on{background:#4caf5026;color:#2e7d32}.tg.bn{background:#e5393526;color:#c62828}.tg.lg{background:#3390ec26;color:var(--acc)}
+.ab .dg{color:#e53935}.ab .dg:hover{background:#e53935;color:#fff}
+.ab .stin{display:flex;gap:6px;align-items:center;margin-inline-start:auto}
+/* ---- profile (Telegram-like) ---- */
+.pqa{display:flex;gap:8px;padding:12px 16px;border-bottom:8px solid var(--input)}
+.pqa button{flex:1;background:var(--input);border:0;border-radius:12px;padding:10px 4px;color:var(--acc);cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:4px;font:inherit;font-size:12px}
+.pqa button span{font-size:22px;line-height:1}.pqa button:hover{background:var(--hover)}
+.pli{width:26px;flex:none;text-align:center;font-size:20px;color:var(--sub)}
+.pcard .prow{padding:11px 20px}
+.pcard .prow.clk{cursor:pointer}.pcard .prow.clk:hover{background:var(--hover)}
+.pcard .pv{white-space:pre-wrap}
+.pset{border-top:8px solid var(--input);padding:4px 0 8px}
+.pset button{display:flex;align-items:center;gap:14px;width:100%;background:none;border:0;padding:11px 20px;cursor:pointer;color:var(--txt);font:inherit;font-size:16px;text-align:right}
+.pset button:hover{background:var(--hover)}
+.pset .ic{width:30px;height:30px;border-radius:8px;display:grid;place-items:center;font-size:16px;color:#fff;flex:none}
+.pset .red{color:#e53935}
+.pset .hint{font-size:12px;color:var(--sub);margin-inline-start:auto}
+.pcard .pstory{display:none}
+
+/* ---- پروفایل پریمیوم: پس‌زمینه‌ی الگودار + هدیه‌ی لیمیتد کنار عکس ---- */
+.phead.pw,.phead.pcol{overflow:hidden;color:#fff!important}
+.phead.pw .pib,.phead.pcol .pib{color:#ffffffd0}.phead.pw .pib:hover,.phead.pcol .pib:hover{background:#ffffff26;color:#fff}
+.phead.pw .ps,.phead.pcol .ps{color:#ffffffcc}.phead.pw .lvlb,.phead.pcol .lvlb{color:#fff}
+.phead>.ppat{position:absolute;inset:0;z-index:0;pointer-events:none;overflow:hidden}
+.ppat span{position:absolute;font-size:20px;transform:translate(-50%,-50%);opacity:.2}
+.pcard .pavw{position:relative;width:100px;margin:0 auto 12px}.pcard .pavw .av.big{margin:0}
+.pwear{position:absolute;top:0;left:calc(100% + 16px);width:42px;height:42px;border-radius:50%;border:0;padding:0;cursor:pointer;display:grid;place-items:center;box-shadow:0 0 0 2px #ffffff80,0 3px 10px #0004;transition:transform .15s}
+.pwear:hover{transform:scale(1.1) rotate(-6deg)}.pwear span{font-size:24px;line-height:1}
+.gwr{background:linear-gradient(135deg,#f5a623,#e17076)!important;color:#fff!important}
+
+/* ---- ریپلای / عکس چت / کیبورد ایموجی ---- */
+.b{position:relative}
+.b .rpb{position:absolute;top:-13px;right:8px;width:26px;height:26px;border-radius:50%;border:0;background:var(--side);color:var(--acc);box-shadow:0 1px 4px #0004;cursor:pointer;font-size:14px;line-height:1;opacity:0;pointer-events:none;transition:opacity .12s;padding:0}
+.b:hover .rpb,.b.sel .rpb{opacity:1;pointer-events:auto}
+.b.flash{animation:flashb 1.1s}
+@keyframes flashb{0%,60%{box-shadow:0 0 0 3px var(--acc)}100%{box-shadow:0 1px 2px #00000026}}
+.rq{display:block;border-left:3px solid var(--acc);background:#00000012;border-radius:6px;padding:3px 8px;margin:0 0 4px;cursor:pointer;font-size:12.5px;line-height:1.4;direction:rtl;text-align:right}
+.rq b{display:block;color:var(--acc);font-weight:600;font-size:12px}
+.rq span{display:block;color:var(--sub);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:240px}
+.b .mimg{display:block;width:min(280px,100%);min-height:110px;max-height:340px;object-fit:cover;border-radius:11px;margin:0 0 4px;cursor:zoom-in;background:var(--side)}
+.b.hasimg{padding:4px 4px 5px}.b.hasimg>span{display:block;margin:2px 6px 0}
+.b.hasimg .rq{margin:2px 2px 4px}
+.b.hasimg i{float:none;display:block;text-align:right;margin:2px 6px 0}
+.rbar{display:flex;align-items:center;gap:8px;padding:6px 14px;background:var(--bg);border-top:1px solid var(--line)}
+.rbar.hide{display:none}
+.rbar>div{flex:1;min-width:0;border-right:3px solid var(--acc);padding:1px 8px;text-align:right}
+.rbar b{display:block;color:var(--acc);font-size:12.5px}
+.rbar span{display:block;color:var(--sub);font-size:12.5px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.rbar button{border:0;background:none;color:var(--sub);font-size:18px;cursor:pointer;padding:4px 8px}
+.emop{background:var(--side);border-top:1px solid var(--line);height:250px;display:flex;flex-direction:column;flex:none}
+.emop.hide{display:none}
+.emg{flex:1;overflow-y:auto;padding:6px 8px;display:flex;flex-wrap:wrap;align-content:flex-start;gap:2px;direction:ltr}
+.emg button{width:42px;height:42px;border:0;background:none;border-radius:10px;font-size:26px;cursor:pointer;position:relative;padding:0}
+.emg button:hover{background:var(--hover)}
+.emg button.lk{opacity:.45}.emg button.lk::after{content:'🔒';position:absolute;right:1px;bottom:0;font-size:11px}
+.emg .emn{width:100%;font-size:12px;color:var(--sub);padding:4px 6px}
+.emt{display:flex;gap:2px;padding:4px 6px;border-top:1px solid var(--line);overflow-x:auto;direction:ltr}
+.emt button{border:0;background:none;border-radius:10px;font-size:20px;padding:5px 9px;cursor:pointer;flex:none}
+.emt button.on{background:var(--input)}
+@media(max-width:520px){.comp{gap:5px;padding:8px}.comp .giftb{width:38px;height:38px;font-size:19px}.emg button{width:38px;height:38px;font-size:24px}}
+
+/* ---- بوست کانال ---- */
+.spon.bst{background:linear-gradient(90deg,#8e5bff,#ff4fa3);color:#fff}
+.row.on .spon.bst{background:#fff3}
+.bstbox{margin:12px 0 4px;text-align:right}
+.bstl{display:flex;justify-content:space-between;font-size:13px;margin-bottom:6px}
+.bstbar{height:9px;border-radius:6px;background:var(--input);overflow:hidden}
+.bstbar i{display:block;height:100%;background:linear-gradient(90deg,#8e5bff,#ff4fa3);border-radius:6px;transition:width .35s}
+.bsth{font-size:12px;color:var(--sub);margin-top:5px}
+.perks{margin:12px 0;text-align:right;font-size:13px;line-height:2}
+.perks .lk{color:var(--sub)}
+.bqty{display:flex;gap:6px;flex-wrap:wrap;margin:8px 0}
+.bqty button{border:0;border-radius:14px;padding:6px 13px;background:var(--input);color:var(--txt);cursor:pointer;font:inherit}
+.bqty button.on{background:var(--acc);color:#fff}
+.bqty input{width:80px;border:0;border-radius:14px;padding:6px 10px;background:var(--input);color:var(--txt);text-align:center;outline:0;font:inherit}
+.bstrs{max-height:170px;overflow-y:auto;margin-top:6px;text-align:right}
+.bstr{display:flex;align-items:center;gap:8px;padding:5px 0}
+.bstr .av{width:30px;height:30px;font-size:13px;flex:none}
+.bstr .nm{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.bstr b{color:var(--acc);font-weight:600;direction:ltr}
+.mlist{max-height:55vh;overflow-y:auto;margin:10px 0;text-align:right}.mrow{display:flex;align-items:center;gap:10px;padding:7px 6px;border-radius:10px;cursor:pointer}.mrow:hover{background:var(--input)}
+.mrow .av{width:38px;height:38px;font-size:16px;flex:none}.mrow .mid{flex:1;min-width:0}.mrow .nm{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.crow{display:flex;align-items:center;gap:8px;margin:8px 0;text-align:right;font-size:13px}
+.crow>span{flex:1}.crow input[type=color]{width:42px;height:32px;border:0;padding:0;background:none;cursor:pointer}
+.crow input[type=text]{width:70px;text-align:center}
+.crow button{border:0;background:var(--input);color:var(--txt);border-radius:10px;padding:5px 10px;cursor:pointer;font:inherit;font-size:12px}
+.crow.off{opacity:.5}
+.cem{width:22px;height:22px;border-radius:6px;object-fit:cover;vertical-align:middle}.cem.t{width:26px;height:26px;margin:0 1px}.cem.big{width:52px;height:52px;border-radius:12px;cursor:pointer}
+.pk .cem{width:26px;height:26px}.cegrid{display:flex;flex-wrap:wrap;gap:10px;margin:14px 0;justify-content:center}.ceit{position:relative}
+.ceit button{position:absolute;top:-6px;inset-inline-end:-6px;width:20px;height:20px;border-radius:50%;border:0;background:#e53935;color:#fff;font-size:11px;cursor:pointer;line-height:1;padding:0}
+</style>
+<style id="authfx">
+#auth{--txt:#eaf0ff;--sub:#8e9bb8;--line:#ffffff1f;--acc:#3d86f5;--input:#ffffff0d;color:var(--txt);position:relative;overflow:hidden;background:radial-gradient(900px 500px at 50% 0,#16224a,transparent),#070b16}
+#auth .sky{position:absolute;inset:0;pointer-events:none}
+#auth .orb{position:absolute;border-radius:50%;filter:blur(70px);opacity:.5;animation:drift 16s ease-in-out infinite alternate}
+.o1{width:340px;height:340px;background:#2b5fd9;top:-90px;right:-60px}.o2{width:300px;height:300px;background:#6b3fd4;bottom:-90px;left:-70px;animation-duration:20s!important}.o3{width:200px;height:200px;background:#1aa6c9;top:45%;left:40%;opacity:.25;animation-duration:24s!important}
+#auth .st1{position:absolute;width:2px;height:2px;border-radius:50%;background:#fff;animation:tw 3s ease-in-out infinite}
+#auth .wrap{position:relative;z-index:1;width:100%;max-width:360px;margin:auto}
+.husky{display:block;width:158px;margin:0 auto -62px;position:relative;z-index:2;overflow:visible;animation:float 4.5s ease-in-out infinite}
+#auth .box{background:linear-gradient(160deg,#ffffff14,#ffffff06);backdrop-filter:blur(18px);-webkit-backdrop-filter:blur(18px);border:1px solid #ffffff22;border-radius:28px;padding:68px 24px 22px;box-shadow:0 24px 70px #0008,inset 0 1px #ffffff1a;max-width:none;color:var(--txt)}
+#auth h1{font-size:30px;font-weight:700;margin:0 0 4px;background:linear-gradient(90deg,#5aa0ff,#b7d4ff,#5aa0ff);background-size:200% 100%;-webkit-background-clip:text;background-clip:text;color:transparent;animation:shine 5s linear infinite}
+#auth .box p{margin:0 0 18px;color:var(--sub)}
+#auth .tabs{position:relative;background:#ffffff0d;border:1px solid var(--line);border-radius:14px;padding:4px;margin-bottom:16px}
+#auth .tabs::before{content:'';position:absolute;top:4px;bottom:4px;right:4px;width:calc(50% - 4px);border-radius:10px;background:#3d86f533;box-shadow:inset 0 0 0 1px #3d86f566;transition:transform .35s cubic-bezier(.3,1.4,.5,1)}
+#auth .tabs.s::before{transform:translateX(-100%)}
+#auth .tabs button{position:relative;border:0;padding:9px;color:var(--sub);transition:color .25s}#auth .tabs button.on{color:#fff}
+.fld{position:relative;margin-bottom:12px}
+#auth .f{margin:0;padding:22px 14px 8px;border-radius:14px;background:#ffffff0d;color:#fff;border:1px solid var(--line)}
+#auth .f:focus{border-color:#3d86f5;box-shadow:0 0 0 3px #3d86f533,0 0 24px #3d86f522;background:#ffffff14}
+.fld label{position:absolute;inset-inline-start:15px;top:16px;color:var(--sub);pointer-events:none;transition:all .2s;transform-origin:right}
+.f:focus+label,.f:not(:placeholder-shown)+label{top:6px;font-size:11.5px;color:#7db0ff}
+.pw{padding-left:44px!important}
+.eyeb{position:absolute;left:10px;top:50%;transform:translateY(-50%);width:32px;height:32px;border:0;background:none;cursor:pointer;border-radius:50%;transition:background .2s}
+.eyeb:hover{background:#ffffff14}.eyeb svg{width:20px;height:20px;fill:none;stroke:var(--sub);stroke-width:1.8;transition:stroke .2s}.eyeb.on svg{stroke:#7db0ff}
+.hint{font-size:12px;color:var(--sub);text-align:right;margin:-4px 2px 10px}
+#auth .rmb{color:var(--sub)}
+#auth .btn{background:linear-gradient(180deg,#3d86f5,#2457c9);box-shadow:0 8px 24px #2b63d655;position:relative;overflow:hidden}
+#auth .btn::after{content:'';position:absolute;top:0;bottom:0;width:40%;left:-60%;background:linear-gradient(100deg,transparent,#ffffff40,transparent);transform:skewX(-20deg);animation:sheen 3.8s ease-in-out infinite}
+.door{display:flex;align-items:center;justify-content:space-between;direction:ltr;padding:12px 22px!important;font-size:16px}
+.dr{position:relative;width:34px;height:38px;perspective:140px;display:block}
+.frame{position:absolute;inset:0;border-radius:6px;background:#bcd6ff;display:block}
+.glow{position:absolute;inset:4px;border-radius:3px;background:#fff6c4;opacity:0;transition:opacity .3s;display:block;box-shadow:0 0 14px #fff6c4}
+.panel{position:absolute;inset:4px;border-radius:3px;background:linear-gradient(#8bb8ff,#4f88ee);transform-origin:left center;transition:transform .45s cubic-bezier(.3,1.2,.5,1);display:block}
+.dooropen .panel{transform:rotateY(72deg)}.dooropen .glow{opacity:.95}
+.man{position:absolute;right:calc(100% + 22px);top:5px;width:14px;height:28px;display:block;transition:transform .76s ease-in,opacity .76s;animation:wait 2.4s ease-in-out infinite}
+.man svg{width:100%;height:100%;fill:none;stroke:#fff;stroke-width:2;stroke-linecap:round}
+.leg{transform-origin:10px 24px}.walking .man{animation:none}
+.walking .lf{animation:thigh .46s linear infinite}.walking .lb{animation:thigh .46s linear infinite reverse}
+.out .man{transform:translateX(52px) scale(.8);opacity:0}
+.husky .ear{animation:twitch 6s ease-in-out infinite}.husky .er{animation-delay:1.7s;transform-origin:170px 78px}.husky .el{transform-origin:50px 78px}
+.husky .eye{animation:blink 5s infinite}.husky .pupil{transition:transform .12s ease-out}
+.husky .m2,.husky .chk{transition:opacity .25s}.husky .m2{opacity:0}.husky.happy .m2{opacity:1}.husky.happy .m1{opacity:0}.husky.happy .chk{opacity:1}
+.husky.happy{animation:hop .5s ease-out 2}
+.husky .paws{opacity:0;transform:translateY(80px);transition:transform .4s cubic-bezier(.3,1.3,.5,1),opacity .25s}
+.husky.cover .paws{opacity:1;transform:none}
+.husky .pr{transition:transform .35s cubic-bezier(.3,1.3,.5,1)}.husky.peek .pr{transform:translate(30px,-6px) rotate(24deg)}
+.rise{animation:rise .6s cubic-bezier(.2,.8,.2,1) both;animation-delay:calc(var(--i,0)*65ms)}
+.shake{animation:shake .4s}
+@keyframes rise{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:none}}
+@keyframes float{50%{transform:translateY(-6px)}}@keyframes hop{40%{transform:translateY(-16px)}}
+@keyframes drift{to{transform:translate(-60px,50px) scale(1.15)}}@keyframes tw{50%{opacity:.1}}
+@keyframes shine{to{background-position:-200% 0}}@keyframes sheen{0%,60%{left:-60%}100%{left:130%}}
+@keyframes blink{0%,92%,100%{transform:scaleY(1)}95%{transform:scaleY(.08)}}
+@keyframes twitch{0%,90%,100%{transform:rotate(0)}93%{transform:rotate(-7deg)}96%{transform:rotate(3deg)}}
+@keyframes wait{50%{transform:translateY(-2px)}}
+@keyframes thigh{0%,100%{transform:rotate(-30deg)}50%{transform:rotate(30deg)}}
+@keyframes shake{20%,60%{transform:translateX(-7px)}40%,80%{transform:translateX(7px)}}
+@media(prefers-reduced-motion:reduce){#auth *,#auth *::after{animation:none!important;transition:none!important}}
+</style><style id="appfx">
+/* ---- app motion ---- */
+#app:not(.hide) .side{animation:fxSideIn .55s cubic-bezier(.2,.8,.2,1) both}
+#app:not(.hide) .main{animation:fxFade .8s .15s both}
+#chat:not(.hide) .chead{animation:fxDrop .35s cubic-bezier(.2,.8,.2,1) both}
+#chat:not(.hide) .comp{animation:fxRise .4s .08s cubic-bezier(.2,.8,.2,1) both}
+.none span{animation:fxFloat 4s ease-in-out infinite}
+.row{transition:background .2s,transform .2s,box-shadow .2s}.row:hover{transform:translateX(-3px)}.row:active{transform:scale(.98)}
+.row.on{box-shadow:0 6px 18px color-mix(in srgb,var(--acc) 40%,transparent)}
+.av{transition:transform .25s cubic-bezier(.3,1.5,.5,1)}.row:hover .av,.me:hover .av{transform:scale(1.08) rotate(-4deg)}
+.dot{animation:fxPulse 2s infinite}
+.bdg{animation:fxPop .45s cubic-bezier(.3,1.8,.5,1) both}
+.fab{animation:fxBob 3.2s ease-in-out infinite}.fab:hover{animation-play-state:paused;transform:scale(1.06)}
+.send{transition:transform .2s cubic-bezier(.3,1.6,.5,1),box-shadow .2s}.send:hover{transform:scale(1.1) rotate(-12deg)}.send:active{transform:scale(.88) rotate(-25deg)}
+.btn{transition:transform .15s,filter .15s,box-shadow .2s}.btn:hover{transform:translateY(-1px)}
+.rx{transition:transform .2s cubic-bezier(.3,1.8,.5,1)}.rx:hover{transform:scale(1.25) translateY(-2px)}.rx:active{transform:scale(.9)}
+.b{transition:transform .2s,box-shadow .2s}.b:hover{box-shadow:0 3px 10px #0003}
+.b.sel{animation:fxPop .3s both}
+.gmsg{transition:transform .2s}.gmsg:hover{transform:scale(1.03)}
+.gem{display:inline-block;animation:fxBob 2.6s ease-in-out infinite}.gem.big{animation:fxSpin 3.5s ease-in-out infinite}
+.gopt{transition:transform .2s cubic-bezier(.3,1.5,.5,1),box-shadow .2s}.gopt:hover:not(:disabled){transform:translateY(-4px) scale(1.04);box-shadow:0 8px 20px #0003}
+.gopt span{display:inline-block;transition:transform .3s}.gopt:hover span{transform:scale(1.25) rotate(8deg)}
+.lmt{background-size:200% 100%;animation:fxShine 3s linear infinite}
+.prem{display:inline-block;animation:fxTwinkle 2.4s ease-in-out infinite}
+#modal:not(.hide){animation:fxFade .25s both}
+#modal:not(.hide) .card{animation:fxCard .4s cubic-bezier(.2,1.2,.4,1) both}
+#modal .av{animation:fxPop .5s .1s cubic-bezier(.3,1.8,.5,1) both}
+.toast{animation:fxToast 2.6s cubic-bezier(.2,.9,.3,1) both!important}
+.search{transition:box-shadow .2s,background .2s,transform .2s}.search:focus{transform:scale(1.02)}
+.comp textarea{transition:box-shadow .2s}.comp textarea:focus{box-shadow:0 0 0 2px color-mix(in srgb,var(--acc) 50%,transparent)}
+.back{transition:transform .2s}.back:active{transform:translateX(4px)}
+.mimg{animation:fxFade .5s both}
+.ac,.astat,.ali{animation:fxRise .45s cubic-bezier(.2,.8,.2,1) both}.ac:nth-child(2){animation-delay:.05s}.ac:nth-child(3){animation-delay:.1s}.ac:nth-child(4){animation-delay:.15s}
+.ab button,.alb{transition:transform .15s,background .2s}.ab button:hover{transform:translateY(-1px)}.ab button:active{transform:scale(.94)}
+.empty{animation:fxFloat 4s ease-in-out infinite}
+@keyframes fxSideIn{from{opacity:0;transform:translateX(40px)}to{opacity:1;transform:none}}
+@keyframes fxFade{from{opacity:0}to{opacity:1}}
+@keyframes fxDrop{from{opacity:0;transform:translateY(-16px)}to{opacity:1;transform:none}}
+@keyframes fxRise{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:none}}
+@keyframes fxFloat{50%{transform:translateY(-5px)}}
+@keyframes fxBob{50%{transform:translateY(-4px)}}
+@keyframes fxSpin{0%,100%{transform:rotate(-8deg) scale(1)}50%{transform:rotate(8deg) scale(1.12)}}
+@keyframes fxPulse{0%{box-shadow:0 0 0 0 #4cd96488}70%,100%{box-shadow:0 0 0 7px #4cd96400}}
+@keyframes fxPop{from{transform:scale(.4);opacity:0}to{transform:none;opacity:1}}
+@keyframes fxShine{to{background-position:-200% 0}}
+@keyframes fxTwinkle{50%{transform:scale(1.2) rotate(12deg);filter:brightness(1.3)}}
+@keyframes fxCard{from{opacity:0;transform:translateY(30px) scale(.9)}to{opacity:1;transform:none}}
+@keyframes fxToast{0%{opacity:0;transform:translate(-50%,24px) scale(.9)}10%,85%{opacity:1;transform:translate(-50%,0)}100%{opacity:0;transform:translate(-50%,-10px)}}
+@media(prefers-reduced-motion:reduce){#app *,#modal *,.toast{animation:none!important;transition:none!important}}
+</style><style id="groupfx">
+.b .dlb{position:absolute;top:-13px;right:40px;width:26px;height:26px;border-radius:50%;border:0;background:var(--side);box-shadow:0 1px 4px #0004;cursor:pointer;font-size:12px;line-height:1;opacity:0;pointer-events:none;transition:opacity .15s,transform .15s}
+.b:hover .dlb,.b.sel .dlb{opacity:1;pointer-events:auto}.b .dlb:hover{transform:scale(1.15)}
+.btn.dgr{background:linear-gradient(180deg,#f0605d,#d32f2f)!important;box-shadow:0 2px 8px #d32f2f55!important}
+#gmsgs{flex:1;overflow-y:auto;padding:10px 12px;display:flex;flex-direction:column;gap:3px;direction:ltr}
+#chat:not(.hide)~#gchat,#chan:not(.hide)~#gchat{display:none!important}
+#gchat:not(.hide) .chead{animation:fxDrop .35s cubic-bezier(.2,.8,.2,1) both}
+#gchat:not(.hide) .comp{animation:fxRise .4s .08s cubic-bezier(.2,.8,.2,1) both}
+.gsn{font-size:12.5px;font-weight:700;margin-bottom:2px;direction:rtl;text-align:right;unicode-bidi:plaintext}
+.gpick,.gl{max-height:30vh;overflow:auto;text-align:right;margin:6px 0}
+.gpk,.gm{display:flex;gap:10px;align-items:center;padding:6px 2px;cursor:pointer}
+.gm{cursor:default}.gpk input{accent-color:var(--acc);width:17px;height:17px}
+.gx{border:0;background:none;color:#e53935;cursor:pointer;font-size:16px;border-radius:50%;width:30px;height:30px}.gx:hover{background:#e5393522}
+.card.ginfo,.card.gnew{max-width:380px}
+.tabs button{font-size:14px}
+#tabg .bdg{display:inline-grid;vertical-align:middle;margin-inline-start:4px;min-width:18px;height:18px;font-size:11px;padding:0 5px}
+@media(max-width:760px){#gchat{position:fixed;inset:0;z-index:5;background:var(--bg)}}
+</style><style id="pefx">
+.b .rxb{position:absolute;top:-13px;right:72px;width:26px;height:26px;border-radius:50%;border:0;background:var(--side);box-shadow:0 1px 4px #0004;cursor:pointer;font-size:13px;line-height:1;opacity:0;pointer-events:none;transition:opacity .15s}
+.b:hover .rxb,.b.sel .rxb{opacity:1;pointer-events:auto}
+.mrx{clear:both;display:flex;flex-wrap:wrap;gap:4px;margin-top:5px;direction:ltr}
+.mrc{border:0;border-radius:14px;padding:2px 8px;background:color-mix(in srgb,var(--acc) 14%,transparent);cursor:pointer;font-size:14px;display:inline-flex;align-items:center;gap:4px;color:var(--txt)}
+.mrc.mine{background:color-mix(in srgb,var(--acc) 38%,transparent);box-shadow:inset 0 0 0 1px var(--acc)}.mrc b{font-size:12px}
+.cem.pei,.pei{object-fit:contain;border-radius:0;pointer-events:none;user-select:none;-webkit-user-select:none;-webkit-user-drag:none;transform:none!important;transition:none!important;animation:none!important}
+.pei{width:30px;height:30px}.cem.pei{width:22px;height:22px}.cem.t.pei{width:24px;height:24px;vertical-align:middle}
+.rx:has(.pei),.rx:has(.pei):hover,.rx:has(.pei):active,.pk:has(.pei):hover,.mrc:has(.pei):hover,.mrc:has(.pei):active,.pek:hover,.pek:active{transform:none!important}
+.pek{border:0;background:none;width:44px;height:44px;cursor:pointer;border-radius:12px;padding:0;display:inline-grid;place-items:center}.pek:hover{background:var(--hover)}.pek.lk{opacity:.45}
+.cegrid .ceit .pei{width:52px;height:52px}.ceit .gx{position:absolute;top:-8px;right:-8px;background:var(--side);box-shadow:0 1px 4px #0004;width:22px;height:22px;font-size:12px}
+</style><style id="navfx">
+#bnav{display:none}
+#pg{display:none}
+@media(max-width:760px){
+.list{padding-bottom:96px}
+.fab{bottom:96px!important}
+#bnav{position:fixed;left:12px;right:12px;bottom:calc(10px + env(safe-area-inset-bottom,0px));z-index:4;display:flex;justify-content:space-around;gap:4px;padding:8px;background:color-mix(in srgb,var(--side) 94%,#000);border-radius:30px;box-shadow:0 6px 24px #0006;border:1px solid var(--line)}
+#app.open~#bnav,#app.hide~#bnav{display:none}
+#bnav button{flex:1;border:0;background:none;border-radius:22px;padding:8px 2px 6px;display:flex;flex-direction:column;align-items:center;gap:3px;font-size:12px;color:var(--sub);cursor:pointer;position:relative}
+#bnav button.on{background:color-mix(in srgb,var(--acc) 22%,transparent);color:var(--acc)}
+#bnav svg{width:26px;height:26px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+#bnav .av{width:26px;height:26px;font-size:12px}
+#bnav .nb{position:absolute;top:2px;inset-inline-start:calc(50% + 4px);background:var(--acc);color:#fff;border-radius:10px;min-width:18px;height:18px;font-size:11px;display:grid;place-items:center;padding:0 5px}
+#pg.show{display:block;position:fixed;inset:0;z-index:3;background:var(--side);overflow-y:auto;padding:16px 14px 110px}
+#pg h2{margin:4px 0 14px;text-align:center;font-size:19px}
+#pg .pgh{text-align:center;margin-bottom:12px}
+#pg .pgh .av{width:84px;height:84px;font-size:32px;margin:0 auto 8px}
+#pg .pgh b{font-size:21px;display:block}#pg .pgh span{color:var(--sub);font-size:13px;direction:ltr;unicode-bidi:embed}
+.wcard{position:relative;border-radius:22px;padding:22px 20px;height:190px;color:#fff;overflow:hidden;margin:6px 0 14px;background:conic-gradient(from 90deg at 50% 50%,#1e88f5,#0d6fdc,#2aa0ff,#0d6fdc,#1e88f5);box-shadow:0 8px 24px #1e88f566;cursor:pointer;display:flex;flex-direction:column;justify-content:space-between}
+.wcard .wb{font-size:34px;font-weight:700;direction:ltr;text-align:start}
+.wcard .wu{opacity:.9;font-size:15px;direction:ltr;text-align:start}
+.wcard .wn{font-weight:600;font-size:17px}
+.wcard .wq{position:absolute;inset-inline-end:18px;top:50%;transform:translateY(-50%);width:62px;height:62px;border-radius:14px;background:#fffd;display:grid;place-items:center;font-size:30px;color:#333}
+.wcard .wc{position:absolute;inset-inline-end:4px;top:10px;writing-mode:vertical-rl;font:10px monospace;opacity:.45;letter-spacing:1px}
+.wbtns{display:flex;gap:10px;margin-bottom:14px}.wbtns .btn{margin:0}
+.srows{background:var(--input);border-radius:18px;overflow:hidden}
+.srow{display:flex;align-items:center;gap:14px;padding:14px 16px;border:0;border-bottom:1px solid var(--line);background:none;width:100%;text-align:start;cursor:pointer;font-size:15px}
+.srow:last-child{border-bottom:0}
+.srow .ic{width:40px;height:40px;border-radius:12px;display:grid;place-items:center;font-size:20px;flex:none}
+.srow .tx small{display:block;color:var(--sub);font-size:12px;margin-top:2px}
+.srow.red{color:#e53935}
+.cfilter{width:100%;padding:11px 14px;border-radius:14px;border:0;background:var(--input);margin-bottom:10px}
+#pg .row{cursor:pointer}
+}
+</style></head>
+<body>
+<section id="auth" class="hide"><div class="sky" id="sky"><i class="orb o1"></i><i class="orb o2"></i><i class="orb o3"></i></div>
+<div class="wrap">
+<svg id="husky" class="husky" viewBox="0 0 220 200" aria-hidden="true">
+ <ellipse cx="110" cy="198" rx="36" ry="46" fill="#f4f6fb"/><ellipse cx="110" cy="190" rx="14" ry="30" fill="#fff"/>
+ <g class="ear el"><path d="M50 78 L38 12 Q72 22 96 54Z" fill="#3b4254"/><path d="M54 62 L48 30 Q64 38 80 54Z" fill="#b9c2d6"/></g>
+ <g class="ear er"><path d="M170 78 L182 12 Q148 22 124 54Z" fill="#3b4254"/><path d="M166 62 L172 30 Q156 38 140 54Z" fill="#b9c2d6"/></g>
+ <ellipse cx="110" cy="106" rx="68" ry="58" fill="#f4f6fb"/>
+ <path d="M42 104 Q42 38 110 36 Q178 38 178 104 Q150 80 110 86 Q70 80 42 104Z" fill="#3b4254"/>
+ <path d="M110 38 L94 80 Q110 92 126 80Z" fill="#fff"/>
+ <circle cx="80" cy="102" r="23" fill="#2c3242"/><circle cx="140" cy="102" r="23" fill="#2c3242"/>
+ <g class="eye" style="transform-origin:80px 102px"><circle cx="80" cy="102" r="12" fill="#9fb0d0"/><g class="pupil"><circle cx="80" cy="102" r="6.5" fill="#171b28"/><circle cx="82.5" cy="99.5" r="2.2" fill="#fff"/></g></g>
+ <g class="eye" style="transform-origin:140px 102px"><circle cx="140" cy="102" r="12" fill="#9fb0d0"/><g class="pupil"><circle cx="140" cy="102" r="6.5" fill="#171b28"/><circle cx="142.5" cy="99.5" r="2.2" fill="#fff"/></g></g>
+ <ellipse cx="58" cy="130" rx="13" ry="8" fill="#f6a58a" opacity=".85" class="chk"/><ellipse cx="162" cy="130" rx="13" ry="8" fill="#f6a58a" opacity=".85" class="chk"/>
+ <ellipse cx="110" cy="128" rx="11" ry="7.5" fill="#1b1e29"/><ellipse cx="107" cy="126" rx="3" ry="1.8" fill="#fff" opacity=".5"/>
+ <path class="m1" d="M96 140 Q103 150 110 141 Q117 150 124 140" stroke="#1b1e29" stroke-width="3" fill="none" stroke-linecap="round"/>
+ <path class="m2" d="M94 138 Q110 164 126 138Q110 146 94 138Z" fill="#c8475c" stroke="#1b1e29" stroke-width="3" stroke-linejoin="round"/>
+ <g class="paws"><g class="pw pl"><ellipse cx="80" cy="104" rx="21" ry="25" fill="#f4f6fb" stroke="#cfd5e3" stroke-width="2"/><circle cx="80" cy="110" r="7" fill="#9fb0d0"/><circle cx="70" cy="95" r="3.5" fill="#9fb0d0"/><circle cx="80" cy="91" r="3.5" fill="#9fb0d0"/><circle cx="90" cy="95" r="3.5" fill="#9fb0d0"/></g>
+ <g class="pw pr"><ellipse cx="140" cy="104" rx="21" ry="25" fill="#f4f6fb" stroke="#cfd5e3" stroke-width="2"/><circle cx="140" cy="110" r="7" fill="#9fb0d0"/><circle cx="130" cy="95" r="3.5" fill="#9fb0d0"/><circle cx="140" cy="91" r="3.5" fill="#9fb0d0"/><circle cx="150" cy="95" r="3.5" fill="#9fb0d0"/></g></g>
+</svg>
+<div class="box">
+  <h1>پیام‌رسان</h1><p>خوش اومدی! هاسکی مراقبته 🐾</p>
+  <div class="tabs"><button id="tl" class="on" type="button">ورود به حساب</button><button id="ts" type="button">ساخت حساب</button></div>
+  <form id="fl"><div class="fld"><input class="f" name="username" placeholder=" " autocomplete="username"><label>نام کاربری</label></div>
+    <div class="fld"><input class="f pw" name="password" type="password" placeholder=" " dir="ltr" autocomplete="current-password" required><label>رمز ورود</label><button type="button" class="eyeb" aria-label="نمایش رمز"><svg viewBox="0 0 24 24"><path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7S1 12 1 12z"/><circle cx="12" cy="12" r="3"/></svg></button></div>
+    <div class="hint">اگر هنوز رمز نگذاشته‌اید: شماره‌ی خود را بزنید</div>
+    <label class="rmb"><input type="checkbox" name="remember" value="on" checked> مرا به خاطر بسپار</label>
+    <button class="btn door" id="goBtn"><span class="dl">ورود</span><span class="dr"><span class="frame"></span><span class="glow"></span><span class="panel"></span><span class="man"><svg viewBox="0 0 20 40"><circle cx="10" cy="6" r="4"/><path d="M10 10V24M10 14L4 21M10 14L16 21"/><path class="leg lf" d="M10 24V37"/><path class="leg lb" d="M10 24V37"/></svg></span></span></button></form>
+  <form id="fs" class="hide"><div class="fld"><input class="f" name="username" placeholder=" " autocomplete="off" required><label>نام کاربری (انگلیسی)</label></div>
+    <div class="fld"><input class="f" name="name" placeholder=" " maxlength="40"><label>نام نمایشی (اختیاری)</label></div>
+    <div class="fld"><input class="f pw" name="password" type="password" placeholder=" " dir="ltr" autocomplete="new-password" minlength="6" required><label>رمز ورود (حداقل ۶ کاراکتر)</label><button type="button" class="eyeb" aria-label="نمایش رمز"><svg viewBox="0 0 24 24"><path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7S1 12 1 12z"/><circle cx="12" cy="12" r="3"/></svg></button></div>
+    <button class="btn">ساخت حساب</button></form>
+  <div class="err" id="err"></div>
+</div></div></section>
+
+<section id="app" class="hide">
+  <aside class="side">
+    <div class="top"><button class="me" id="meBtn"></button><input class="search" id="q" placeholder="جستجوی کاربر یا کانال با @" autocomplete="off"></div>
+    <div class="tabs" style="margin:0"><button id="tabc" class="on">گفتگوها</button><button id="tabch">کانال‌ها</button><button id="tabg">گروه‌ها</button></div>
+    <div class="list" id="list"></div>
+    <button class="fab" id="fab">＋ کانال جدید</button>
+  </aside>
+  <main class="main">
+    <div class="none" id="none"><span>یک گفتگو را انتخاب کنید یا @نام‌کاربری را جستجو کنید</span></div>
+    <div class="hide" id="chat" style="flex:1;display:flex;flex-direction:column;min-height:0">
+      <div class="chead"><button class="back" id="back">›</button><div id="ch" style="display:flex;gap:10px;align-items:center"></div></div>
+      <div id="msgs"></div>
+      <div class="rbar hide" id="rbar"><div><b id="rbn"></b><span id="rbt"></span></div><button id="rbx" aria-label="لغو ریپلای">✕</button></div>
+      <div class="emop hide" id="emop"><div class="emg" id="emg"></div><div class="emt" id="emt"></div></div>
+      <div class="comp"><button class="giftb" id="giftBtn" title="ارسال هدیه" aria-label="ارسال هدیه">🎁</button><button class="giftb" id="imgBtn" title="ارسال عکس" aria-label="ارسال عکس">📷</button><button class="giftb" id="emoBtn" title="ایموجی" aria-label="ایموجی">😊</button><textarea id="in" rows="1" placeholder="پیام"></textarea>
+        <button class="send" id="sendBtn" aria-label="ارسال"><svg viewBox="0 0 24 24"><path d="M2 21 23 12 2 3v7l15 2-15 2z"/></svg></button></div>
+    </div>
+    <div class="hide" id="chan" style="flex:1;display:flex;flex-direction:column;min-height:0">
+      <div class="chead"><button class="back" id="back2">›</button><div id="chh" style="display:flex;gap:10px;align-items:center;flex:1;min-width:0"></div></div>
+      <div id="posts"></div>
+      <div class="jbar hide" id="jbar"><button id="jbtn"></button></div>
+      <div class="cprev hide" id="cprev"><img id="cprevi" alt=""><span class="st" style="flex:1">تصویر پیوست شد</span><button id="cprevx" aria-label="حذف تصویر">✕</button></div>
+      <div class="comp hide" id="cbar"><button class="giftb" id="cattach" title="افزودن تصویر" aria-label="افزودن تصویر">📷</button><textarea id="cin" rows="1" placeholder="پست جدید"></textarea>
+        <button class="send" id="csend" aria-label="انتشار"><svg viewBox="0 0 24 24"><path d="M2 21 23 12 2 3v7l15 2-15 2z"/></svg></button></div>
+    </div>
+    <div class="hide" id="gchat" style="flex:1;display:flex;flex-direction:column;min-height:0">
+      <div class="chead"><button class="back" id="gback">›</button><div id="gh" style="display:flex;gap:10px;align-items:center;flex:1;min-width:0;cursor:pointer"></div></div>
+      <div id="gmsgs"></div>
+      <div class="rbar hide" id="grbar"><div><b id="grbn"></b><span id="grbt"></span></div><button id="grbx" aria-label="لغو ریپلای">✕</button></div>
+      <div class="comp"><textarea id="gin" rows="1" placeholder="پیام به گروه"></textarea><button class="send" id="gsend" aria-label="ارسال"><svg viewBox="0 0 24 24"><path d="M2 21 23 12 2 3v7l15 2-15 2z"/></svg></button></div>
+    </div>
+  </main>
+</section>
+<section id="admin" class="hide">
+  <div class="ahd"><h2>پنل ادمین</h2><span class="st" id="atotal"></span><a class="pill" href="/api/admin/backup">⬇ بکاپ</a>
+    <button class="pill" id="arest" style="border:0;margin-inline-start:6px">⬆ بارگذاری بکاپ</button>
+    <button class="alo" onclick="api('/admin/logout','POST').then(()=>location.reload())">خروج</button></div>
+  <div id="apers" class="hide">⚠️ دیتابیس روی دیسک دائمی نیست و با هر دیپلوی پاک می‌شود. در Railway یک Volume با مسیر /data به سرویس اضافه کنید.</div>
+  <div class="astats" id="astats"></div>
+  <div class="tabs atabs" id="atabs"><button data-t="u" class="on">👥 کاربران</button><button data-t="g">💠 هدیه‌ی لیمیتد</button><button data-t="e">ایموجی پریمیوم</button><button data-t="c">📌 کانال‌ها</button></div>
+  <div class="apane" id="apu"><input class="search f" id="aq" placeholder="جستجوی @نام‌کاربری" autocomplete="off"><div id="ausers"></div></div>
+  <div class="apane hide" id="apg"><div class="ac" id="alimbox"><div class="nm" style="margin-bottom:8px">💠 هدیه‌ی لیمیتد (مثل NFT)</div>
+    <div class="alf"><input class="f" id="ln" placeholder="نام (مثلاً کلاه طلایی)" maxlength="30"><input class="f" id="le" placeholder="ایموجی" maxlength="8" style="max-width:90px">
+    <input class="f" id="lp" type="number" min="1" placeholder="قیمت ⭐"><input class="f" id="ls" type="number" min="1" placeholder="تعداد کل"><input id="lc" type="color" value="#3390ec" title="رنگ پس‌زمینه"></div>
+    <div class="err" id="lerr"></div><button class="btn" onclick="mkLimited()">ساخت هدیه‌ی لیمیتد</button><div id="alist" style="margin-top:12px"></div></div></div>
+  <div class="apane hide" id="ape"><div class="ac"><div class="nm" style="margin-bottom:8px">ساخت ایموجی پریمیوم</div>
+    <div class="st" style="margin-bottom:10px">یک عکس (ترجیحاً PNG شفاف و مربعی) انتخاب کنید. ایموجی ثابت ساخته می‌شود (بدون حرکت) و فقط کاربران پریمیوم می‌توانند در پیام، گروه و ری‌اکشن از آن استفاده کنند.</div>
+    <input type="file" id="peFile" accept="image/png,image/webp,image/jpeg,image/gif"><div id="pePrev" style="margin:10px 0"></div><div class="err" id="peErr"></div><button class="btn" id="peAdd" disabled>افزودن ایموجی</button></div>
+  <div class="ac"><div class="nm">ایموجی‌های ساخته‌شده</div><div class="cegrid" id="peGrid"></div></div></div>
+  <div class="apane hide" id="apc"><div class="ac" id="achbox"><div class="nm" style="margin-bottom:8px">📌 پین و اسپانسر کانال‌ها</div>
+    <input class="f" id="acq" placeholder="جستجوی نام یا لینک کانال" autocomplete="off" style="width:100%"><div id="achs" style="margin-top:8px"></div></div></div>
+</section>
+<nav id="bnav" aria-label="ناوبری"></nav><div id="pg"></div>
+<div id="modal" class="hide"></div>
+
+<script>
+const $=s=>document.querySelector(s);
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const COL=['#e17076','#faa774','#a695e7','#7bc862','#6ec9cb','#65aadd','#ee7aae'];
+const av=(u,c='')=>`<div class="av ${c}" style="background:${u.photo?`url('${esc(u.photo)}') center/cover`:COL[u.id%7]}">${u.photo?'':esc((u.name||u.username)[0].toUpperCase())}${u.online?'<i class="dot"></i>':''}</div>`;
+const hm=t=>new Date(t).toLocaleTimeString('fa-IR',{hour:'2-digit',minute:'2-digit'});
+const dy=t=>new Date(t).toLocaleDateString('fa-IR',{month:'long',day:'numeric'});
+const same=(a,b)=>new Date(a).toDateString()===new Date(b).toDateString();
+const short=t=>same(t,Date.now())?hm(t):dy(t);
+const seen=u=>u.online?'آنلاین':'آخرین بازدید '+short(u.lastSeen);
+async function api(p,m='GET',b){const r=await fetch('/api'+p,{method:m,headers:{'Content-Type':'application/json'},body:b?JSON.stringify(b):undefined});
+  const j=await r.json().catch(()=>({}));if(r.status===403&&j.error==='banned')return location.reload();if(!r.ok)throw new Error(j.error||'خطا');return j}
+let me,chats=[],active=null,msgs=[],socket,typingT,lastTyping=0,searching=false;
+
+/* ---- auth ---- */
+const tab=s=>{$('#fl').classList.toggle('hide',s);$('#fs').classList.toggle('hide',!s);$('#tl').classList.toggle('on',!s);$('#ts').classList.toggle('on',s);$('#err').textContent=''};
+$('#tl').onclick=()=>tab(false);$('#ts').onclick=()=>tab(true);
+const nm=u=>`<span class="nmc"${u.premium&&u.nameColor?` style="color:${esc(u.nameColor)}"`:''}>${esc(u.name)}</span>`+(u.premium?` <span class="prem" title="پریمیوم">${u.wear?esc(u.wear.emoji):(u.emojiStatus?esc(u.emojiStatus):'★')}</span>`:'');
+const RM='rm';
+const form=(id,path,after)=>$(id).onsubmit=async e=>{e.preventDefault();
+  try{const d=Object.fromEntries(new FormData(e.target));if(id==='#fl'&&!d.remember)d.remember='off';
+    const j=await api(path,'POST',d);if(j.admin)return showAdmin();me=j.me;
+    try{if(id==='#fs'||d.remember!=='off')localStorage.setItem(RM,JSON.stringify({username:me.username}));else localStorage.removeItem(RM)}catch{}
+    after()}catch(x){$('#err').textContent=x.message}};
+try{const r=JSON.parse(localStorage.getItem(RM)||'null');if(r){$('#fl [name=username]').value=r.username||''}}catch{}
+form('#fl','/login',()=>doorThen(start));
+form('#fs','/signup',()=>modal(`${av(me)}<h2 style="margin:0">حساب ساخته شد 🎉</h2><p class="st">دفعه‌ی بعد با همان رمزی که انتخاب کردید وارد شوید.</p>
+  <button class="btn" onclick="closeModal();start()">ورود به پیام‌رسان</button>`));
+function modal(h,k=''){const m=$('#modal');m.innerHTML=`<div class="card ${k}">${h}</div>`;m.classList.remove('hide')}
+function closeModal(){$('#modal').classList.add('hide')}
+$('#modal').onclick=e=>{if(e.target.id==='modal'&&me&&!$('#app').classList.contains('hide'))closeModal()};
+$('#meBtn').onclick=()=>openProfile(me);
+$('#ch').onclick=()=>{if(active)openProfile(active)};
+
+
+/* ---- boot ---- */
+(async()=>{try{me=(await api('/me')).me;start()}catch{try{await api('/admin/check');showAdmin()}catch{$('#auth').classList.remove('hide')}}})();
+function start(){$('#auth').classList.add('hide');$('#app').classList.remove('hide');$('#meBtn').innerHTML=av(me,'sm');connect();loadChats();loadCh();loadGroups();loadPE()}
+
+function connect(){
+  socket=io();
+  socket.on('message',m=>{
+    const o=m.from===me.id?m.to:m.from;
+    if(active&&active.id===o){msgs.push(m);renderMsgs();if(m.from!==me.id)socket.emit('read',{from:o})}
+    loadChats();
+  });
+  socket.on('msgdel',({id})=>{const n=msgs.length;msgs=msgs.filter(m=>m.id!==id);if(active&&msgs.length!==n)keep($('#msgs'),renderMsgs);loadChats()});
+  socket.on('pemojis',d=>{PEL=d.emojis;pRerender()});
+  socket.on('mrx',d=>{const m=(d.scope==='d'?msgs:gmsgs).find(x=>x.id===d.id);if(!m)return;m.rx=d.rx;d.scope==='d'?keep($('#msgs'),renderMsgs):keep($('#gmsgs'),gRender)});
+  socket.on('gmessage',gOnMsg);socket.on('gmsgdel',gOnDel);socket.on('gchange',gOnChange);
+  socket.on('typing',({from})=>{if(active&&active.id===from){setStatus('در حال نوشتن…',true);clearTimeout(typingT);typingT=setTimeout(()=>setStatus(),2000)}});
+  socket.on('presence',p=>{
+    [active,...chats.map(c=>c.user)].forEach(u=>{if(u&&u.id===p.id){u.online=p.online;if(p.lastSeen)u.lastSeen=p.lastSeen}});
+    if(active&&active.id===p.id)setStatus();if(!searching)renderList();
+  });
+  socket.on('read',({by,from})=>{
+    if(by===me.id){const c=chats.find(c=>c.user.id===from);if(c)c.unread=0;if(!searching)renderList()}
+    else if(active&&active.id===by){msgs.forEach(m=>{if(m.from===me.id)m.read=true});renderMsgs()}
+  });
+  socket.on('account',a=>{Object.assign(me,a);if(cur)renderChan(true)});
+  socket.on('giftupdate',({id,converted})=>{let hit=false,hp=false;msgs.forEach(m=>{if(m.gift&&m.gift.id===id){m.gift.converted=converted;hit=true}});if(cur)cur.posts.forEach(p=>{if(p.gift&&p.gift.id===id){p.gift.converted=converted;hp=true}});if(hit)renderMsgs();if(hp)renderChan(true)});
+  socket.on('chpromo',()=>loadCh());
+  socket.on('chboost',d=>{if(cur&&cur.ch.id===d.id){Object.assign(cur.ch,{level:d.level,nameColor:d.nameColor,profileColor:d.profileColor,emojiStatus:d.emojiStatus});cur.ch.boost=Object.assign(cur.ch.boost||{},d.boost);renderChan(true)}loadCh()});
+  socket.on('chupdate',c=>{if(cur&&cur.ch.id===c.id){Object.assign(cur.ch,c);renderChan(true)}loadCh()});
+  socket.on('post',p=>{if(cur&&cur.ch.id===p.channelId){cur.posts.push(p);renderChan();if(!p.gift)api('/posts/'+p.id+'/view','POST').catch(()=>{})}loadCh()});
+  socket.on('views',({postId,views})=>{if(!cur)return;const p=cur.posts.find(x=>x.id===postId);if(p){p.views=views;renderChan(true)}});
+  socket.on('reaction',({postId,kind,count})=>{if(!cur)return;const p=cur.posts.find(x=>x.id===postId);
+    if(p){p.reactions=p.reactions||{};p.reactions[kind]=Object.assign({mine:0},p.reactions[kind],{count});renderChan(true)}});
+  socket.on('connect',()=>{if(active)openChat(active);if(cur)socket.emit('watch',cur.ch.id)});
+}
+
+/* ---- list & search ---- */
+async function loadChats(){chats=(await api('/chats')).chats;if(!searching)renderList()}
+function renderList(){
+  if(tabMode==='channels')return renderChannels();
+  if(tabMode==='groups')return renderGroups();
+  const promo=myCh.filter(x=>x.pinned||x.sponsored).map(x=>`<div class="row ${cur&&cur.ch.id===x.id?'on':''}" data-c="${x.id}">${chav(x)}<div class="mid"><div class="l1"><span class="nm">${chNm(x)}${promoBadge(x)}</span><span class="tm">${x.last?short(x.last.at):''}</span></div>
+    <div class="sub">${x.last?esc(x.last.body||'📷 عکس'):'کانال'}</div></div></div>`).join('');
+  $('#list').innerHTML=promo+(chats.length?chats.map(c=>{const u=c.user,l=c.last;
+    return `<div class="row ${active&&active.id===u.id?'on':''}" data-id="${u.id}">${av(u)}<div class="mid">
+    <div class="l1"><span class="nm">${nm(u)}</span><span class="tm">${l.from===me.id?(l.read?'✓✓ ':'✓ '):''}${short(l.at)}</span></div>
+    <div class="l2"><span class="sub">${l.from===me.id?'شما: ':''}${plainPe(l.body)||'📷 عکس'}</span>${c.unread?`<span class="bdg">${c.unread}</span>`:''}</div></div></div>`}).join('')
+    :(promo?'':`<div class="empty">هنوز گفتگویی ندارید.<br>نام‌کاربری دوستتان را در کادر بالا جستجو کنید.</div>`));
+  $('#list').querySelectorAll('[data-id]').forEach(r=>r.onclick=()=>openChat(chats.find(c=>c.user.id==r.dataset.id).user));
+  $('#list').querySelectorAll('[data-c]').forEach(r=>r.onclick=()=>openChannel(+r.dataset.c));
+}
+let st;$('#q').oninput=e=>{clearTimeout(st);const q=e.target.value.trim();
+  if(!q){searching=false;renderList();return}
+  st=setTimeout(async()=>{searching=true;const {users,channels}=await api('/search?q='+encodeURIComponent(q));
+    $('#list').innerHTML=(users.length?`<div class="hdr">کاربران</div>`+users.map(u=>`<div class="row" data-id="${u.id}">${av(u)}<div class="mid">
+      <div class="nm">${nm(u)}</div><div class="sub">@${esc(u.username)}</div></div></div>`).join(''):'')
+      +(channels.length?`<div class="hdr">کانال‌ها</div>`+channels.map(x=>`<div class="row" data-c="${x.id}">${chav(x)}<div class="mid">
+      <div class="nm">${chNm(x)}${promoBadge(x)}</div><div class="sub">@${esc(x.handle)} · ${x.subs} مشترک</div></div></div>`).join(''):'')
+      ||`<div class="empty">چیزی پیدا نشد.</div>`;
+    const done=()=>{$('#q').value='';searching=false;renderList()};
+    $('#list').querySelectorAll('[data-id]').forEach(r=>r.onclick=()=>{openChat(users.find(u=>u.id==r.dataset.id));done()});
+    $('#list').querySelectorAll('[data-c]').forEach(r=>r.onclick=()=>{openChannel(+r.dataset.c);done()})},250)};
+
+/* ---- chat ---- */
+async function openChat(u){
+  const r=await api('/messages/'+u.id);active=r.user;msgs=r.messages;
+  $('#none').classList.add('hide');$('#chan').classList.add('hide');cur=null;$('#chat').classList.remove('hide');$('#app').classList.add('open');
+  $('#ch').innerHTML=`${av(active,'sm')}<div><div class="nm">${nm(active)}</div><div class="st" id="st"></div></div>`;
+  clearReply();closeEmo();setStatus();renderMsgs();renderList();socket.emit('read',{from:u.id});if(!isTouch())$('#in').focus();
+}
+function setStatus(t,on){const e=$('#st');if(!e||!active)return;e.textContent=t||seen(active);e.className='st'+((on||active.online)?' on':'')}
+function renderMsgs(){
+  const box=$('#msgs');let h='',prev=0;
+  msgs.forEach(m=>{if(!prev||!same(prev,m.at))h+=`<div class="day">${dy(m.at)}</div>`;prev=m.at;const o=m.from===me.id;
+    if(m.gift){h+=giftCard(m,o);return}
+    const rq=m.reply?`<div class="rq" data-go="${m.reply.id}"><b>${m.reply.from===me.id?'شما':esc(active?(active.name||active.username):'')}</b><span>${esc(m.reply.body||(m.reply.photo?'📷 عکس':''))}</span></div>`:'';
+    h+=`<div class="b ${o?'out':'inn'}${m.img?' hasimg':''}" data-mid="${m.id}"><button class="rxb" title="واکنش" aria-label="واکنش">🙂</button><button class="rpb" title="پاسخ" aria-label="پاسخ">↩</button><button class="dlb" title="حذف" aria-label="حذف">🗑</button>${rq}${m.img?`<img class="mimg" src="${esc(m.img)}" alt="">`:''}${m.body?`<span>${peTxt(esc(m.body))}</span>`:''}<i>${hm(m.at)}${o?` <b class="${m.read?'ok':''}">${m.read?'✓✓':'✓'}</b>`:''}</i>${mrxHtml(m)}</div>`});
+  box.innerHTML=h;box.scrollTop=box.scrollHeight;
+  box.querySelectorAll('.mimg').forEach(im=>{if(!im.complete)im.onload=()=>{if(box.scrollHeight-box.scrollTop-box.clientHeight<500)box.scrollTop=box.scrollHeight}});
+}
+const goBack=()=>{clearReply();closeEmo();$('#app').classList.remove('open');active=null;cur=null;renderList();$('#chat').classList.add('hide');$('#chan').classList.add('hide');$('#none').classList.remove('hide')};
+$('#back').onclick=goBack;$('#back2').onclick=goBack;
+function send(){const t=$('#in');const body=t.value.trim();if(!body||!active)return;
+  socket.emit('send',{to:active.id,body,replyTo:replyTo?replyTo.id:undefined},r=>{if(r&&r.blocked)toast(r.blocked==='me'?'این کاربر را بلاک کرده‌اید؛ ابتدا رفع بلاک کنید':'امکان ارسال پیام به این کاربر وجود ندارد')});t.value='';t.style.height='auto';clearReply();if(!isTouch())t.focus()}
+$('#sendBtn').onclick=send;
+$('#in').onkeydown=e=>{if(e.key==='Enter'&&!e.shiftKey&&!e.isComposing){e.preventDefault();send()}};
+$('#in').oninput=e=>{e.target.style.height='auto';e.target.style.height=e.target.scrollHeight+'px';
+  if(active&&Date.now()-lastTyping>2000){lastTyping=Date.now();socket.emit('typing',{to:active.id})}};
+
+/* ---- ریپلای ---- */
+let replyTo=null;
+const isTouch=()=>matchMedia('(hover:none)').matches;
+function setReply(id){const m=msgs.find(x=>x.id===id);if(!m||m.gift)return;replyTo=m;
+  $('#rbn').textContent=m.from===me.id?'شما':(active.name||active.username);
+  $('#rbt').textContent=m.body||(m.img?'📷 عکس':'');$('#rbar').classList.remove('hide');if(!isTouch())$('#in').focus()}
+function clearReply(){replyTo=null;const b=$('#rbar');if(b)b.classList.add('hide')}
+$('#rbx').onclick=clearReply;
+$('#msgs').addEventListener('click',e=>{
+  const bub=e.target.closest('.b[data-mid]');if(!bub)return;
+  if(e.target.closest('.rpb')){setReply(+bub.dataset.mid);bub.classList.remove('sel');return}
+  const go=e.target.closest('.rq');
+  if(go){const t=$('#msgs').querySelector(`.b[data-mid="${go.dataset.go}"]`);
+    if(!t){toast('پیام اصلی در بخش بالاتر گفتگو است');return}
+    t.scrollIntoView({block:'center',behavior:'smooth'});t.classList.remove('flash');void t.offsetWidth;t.classList.add('flash');return}
+  const im=e.target.closest('.mimg');if(im){lightbox(im.src);return}
+  const was=bub.classList.contains('sel');$('#msgs').querySelectorAll('.b.sel').forEach(x=>x.classList.remove('sel'));if(!was&&isTouch())bub.classList.add('sel')});
+$('#msgs').addEventListener('dblclick',e=>{const bub=e.target.closest('.b[data-mid]');if(bub&&!e.target.closest('.mimg,.rq'))setReply(+bub.dataset.mid)});
+
+/* ---- ارسال عکس در چت ---- */
+$('#imgBtn').onclick=()=>{if(active)pickImage(1280,.82,false,photoPreview)};
+function photoPreview(d){const tgt=active;if(!tgt)return;
+  modal(`<img src="${d}" style="max-width:100%;max-height:50vh;border-radius:12px;display:block;margin:auto"><input id="phc" placeholder="توضیح (اختیاری)" maxlength="1000" style="margin-top:10px;width:100%;box-sizing:border-box;padding:11px 14px;border:0;border-radius:12px;background:var(--input);color:var(--txt);outline:0;text-align:right"><div style="display:flex;gap:8px"><button class="btn" id="phs">ارسال</button><button class="btn g" onclick="closeModal()">انصراف</button></div>`,'lbx');
+  $('#phs').onclick=async()=>{const b=$('#phs');b.disabled=true;
+    try{await api('/messages/'+tgt.id+'/photo','POST',{photo:d,body:$('#phc').value.trim(),replyTo:replyTo?replyTo.id:undefined});clearReply();closeModal()}
+    catch(e){toast(e.message);b.disabled=false}}}
+
+/* ---- کیبورد ایموجی (تب 👑 مخصوص پریمیوم؛ همان PREM ری‌اکشن‌ها) ---- */
+const KB=[
+ ['😀','صورتک‌ها','😀 😃 😄 😁 😆 😅 🤣 😂 🙂 🙃 😉 😊 😇 🥰 😍 😘 😗 😋 😛 😜 😝 🤑 🤗 🤭 🤫 🤔 🤐 😐 😑 😶 😏 😒 🙄 😬 😌 😔 😪 😴 😷 🤒 🤕 🤢 🤮 🥵 🥶 😵 😎 🤓 🧐 😕 😟 🙁 😮 😯 😲 😳 🥺 😦 😧 😨 😰 😥 😢 😭 😱 😖 😣 😞 😓 😩 😫 😤 😡 😠 🤬 😈 👿 💀 🤡 👻 👽 🤖'],
+ ['👍','دست‌ها','👍 👎 👌 ✌️ 🤞 🤟 🤘 🤙 👈 👉 👆 👇 ☝️ ✋ 🤚 🖐 🖖 👋 🤝 🙏 👏 🙌 👐 🤲 💪 ✍️ 🤳 🙋 🤷 🤦 🙆 🙅 💁 🙇'],
+ ['❤️','قلب‌ها','❤️ 🧡 💛 💚 💙 💜 🖤 🤍 🤎 💔 ❣️ 💕 💞 💓 💗 💖 💘 💝 💟 ♥️ 😻 💋 💌'],
+ ['🐶','طبیعت','🐶 🐱 🐭 🐹 🐰 🦊 🐻 🐼 🐨 🐯 🦁 🐮 🐷 🐸 🐵 🐔 🐧 🐦 🦆 🦅 🦉 🐺 🐴 🐝 🦋 🐌 🐢 🐍 🐙 🐬 🐳 🐟 🌵 🌲 🌴 🌸 🌹 🌻 🌼 🍀 🍁 🌙 ☀️ ⭐ 🌟 ✨ ☁️ ❄️ 🔥 💧'],
+ ['🍕','خوراکی','🍏 🍎 🍐 🍊 🍋 🍌 🍉 🍇 🍓 🍒 🍑 🥭 🍍 🥥 🥝 🍅 🥑 🥕 🌽 🥔 🍞 🧀 🍳 🥞 🥓 🍔 🍟 🍕 🌭 🌮 🍜 🍝 🍣 🍦 🍩 🍪 🎂 🍫 🍬 ☕ 🍵 🥤 🍺'],
+ ['⚽','فعالیت','⚽ 🏀 🏈 ⚾ 🎾 🏐 🎱 🏓 🥊 🎯 🎮 🎲 🎸 🎹 🎧 🎤 🎬 🎨 🚗 ✈️ 🏠 🎁 🎈 🎊 🏆 🥇 📱 💻 📷 💡 📚 💰 🔑'],
+];
+let emoTab=0;
+function renderEmo(){
+  const t=$('#emt'),g=$('#emg');
+  t.innerHTML=KB.map((c,i)=>`<button data-t="${i}" class="${i===emoTab?'on':''}" title="${c[1]}">${c[0]}</button>`).join('')+`<button data-t="p" class="${emoTab==='p'?'on':''}" title="پریمیوم">${me.premium?'👑':'🔒'}</button>`;
+  if(emoTab==='p'){g.innerHTML=`<div class="emn">${me.premium?'ایموجی‌های ویژه‌ی پریمیوم':'🔒 این ایموجی‌ها ویژه‌ی کاربران پریمیوم است؛ برای فعال‌سازی روی هرکدام بزنید'}</div>`+(PEL.length?PEL.map(e=>`<button data-e=":pe${e.id}:" class="pek ${me.premium?'':'lk'}"><img class="pei" draggable="false" src="${esc(e.url)}" alt=""></button>`).join(''):'<div class="emn">هنوز ایموجی ویژه‌ای ساخته نشده.</div>')}
+  else g.innerHTML=KB[emoTab][2].split(' ').map(k=>`<button data-e="${k}">${k}</button>`).join('');
+  g.scrollTop=0}
+let emoT='#in';
+function insEmoji(e){const t=$(emoT);const s=t.selectionStart??t.value.length,en=t.selectionEnd??s;
+  t.value=t.value.slice(0,s)+e+t.value.slice(en);t.selectionStart=t.selectionEnd=s+e.length;t.dispatchEvent(new Event('input'));if(!isTouch())t.focus()}
+function closeEmo(){const p=$('#emop');if(p){p.classList.add('hide');$('#emoBtn').textContent='😊'}}
+$('#emoBtn').onclick=()=>{const p=$('#emop');emoT='#in';$('#chat').insertBefore(p,$('#chat .comp'));if(p.classList.contains('hide')){renderEmo();p.classList.remove('hide');$('#emoBtn').textContent='⌨️'}else closeEmo()};
+$('#emop').addEventListener('mousedown',e=>e.preventDefault());
+$('#emop').addEventListener('click',e=>{
+  const tb=e.target.closest('[data-t]');if(tb){emoTab=tb.dataset.t==='p'?'p':+tb.dataset.t;renderEmo();return}
+  const eb=e.target.closest('[data-e]');if(!eb)return;
+  if(/^:pe\d+:$/.test(eb.dataset.e)&&!me.premium){premiumShop(me);return}
+  insEmoji(eb.dataset.e)});
+document.addEventListener('keydown',e=>{if(e.key==='Escape'){closeEmo();clearReply()}});
+/* ---- channels ---- */
+let tabMode='chats',myCh=[],cur=null;
+const FREE=['👍','❤️','😂','🔥','😮','🎉'];
+const PREM=[];
+const chav=(x,s='')=>x.photo?`<div class="av ${s}" style="background:url('${esc(x.photo)}') center/cover"></div>`:`<div class="av ${s}" style="background:${COL[x.id%7]}">${esc((x.title||'?')[0])}</div>`;
+const isSelf=u=>u.id===me.id&&!u.channel;
+function pickImage(max,q,sq,cb){const i=document.createElement('input');i.type='file';i.accept='image/*';
+  i.onchange=()=>{const f=i.files[0];if(!f)return;const im=new Image(),u=URL.createObjectURL(f);
+    im.onload=()=>{let sw=im.width,sh=im.height,sx=0,sy=0;if(sq){const m=Math.min(sw,sh);sx=(sw-m)/2;sy=(sh-m)/2;sw=sh=m}
+      const k=Math.min(1,max/Math.max(sw,sh)),c=document.createElement('canvas');c.width=Math.round(sw*k);c.height=Math.round(sh*k);
+      const x=c.getContext('2d');x.fillStyle='#fff';x.fillRect(0,0,c.width,c.height);x.drawImage(im,sx,sy,sw,sh,0,0,c.width,c.height);URL.revokeObjectURL(u);
+      let d,qq=q;do{d=c.toDataURL('image/jpeg',qq);qq-=.12}while(d.length>(sq?260000:880000)&&qq>.3);cb(d)};
+    im.onerror=()=>toast('تصویر نامعتبر است');im.src=u};i.click()}
+function lightbox(src){modal(`<img src="${esc(src)}" style="max-width:100%;max-height:78vh;border-radius:12px;display:block;margin:auto"><button class="btn g" onclick="closeModal()" style="margin-top:10px">بستن</button>`,'lbx')}
+const chTarget=()=>({id:cur.ch.ownerId,name:cur.ch.title,channel:cur.ch.id});
+function toast(t){const d=document.createElement('div');d.className='toast';d.textContent=t;document.body.appendChild(d);setTimeout(()=>d.remove(),2600)}
+function setTab(m){tabMode=m;$('#tabc').classList.toggle('on',m==='chats');$('#tabch').classList.toggle('on',m==='channels');$('#tabg').classList.toggle('on',m==='groups');$('#fab').textContent=m==='groups'?'＋ گروه جدید':'＋ کانال جدید';$('#fab').onclick=m==='groups'?newGroup:newChannel;if(m==='groups')loadGroups();$('#q').value='';searching=false;if(m==='channels')loadCh();renderList()}
+$('#fab').onclick=newChannel;
+$('#tabg').onclick=()=>setTab('groups');$('#tabc').onclick=()=>setTab('chats');$('#tabch').onclick=()=>setTab('channels');
+async function loadCh(){myCh=(await api('/channels')).channels;if(!searching)renderList()}
+const promoBadge=x=>(x.pinned?'<span class="spon" style="background:none;padding:0">📌</span>':'')+(x.sponsored?'<span class="spon">اسپانسر</span>':'')+(x.level?`<span class="spon bst" title="سطح بوست">⚡${x.level}</span>`:'');
+const chNm=(x,color)=>`<span${color&&x.nameColor?` style="color:${esc(x.nameColor)}"`:''}>${esc(x.title)}</span>${x.emojiStatus?' '+esc(x.emojiStatus):''}`;
+function renderChannels(){
+  $('#list').innerHTML=`<div class="row" id="mk"><div class="av" style="background:var(--acc);border-radius:30%">＋</div><div class="mid"><div class="nm">ساخت کانال</div><div class="sub">پست بگذارید و ری‌اکشن بگیرید</div></div></div>`
+   +myCh.map(x=>`<div class="row ${cur&&cur.ch.id===x.id?'on':''}" data-c="${x.id}">${chav(x)}<div class="mid"><div class="l1"><span class="nm">${chNm(x)}${promoBadge(x)}</span><span class="tm">${x.last?short(x.last.at):''}</span></div>
+   <div class="sub">${x.last?esc(x.last.body||'📷 عکس'):'هنوز پستی نیست'}</div></div></div>`).join('');
+  $('#mk').onclick=newChannel;
+  $('#list').querySelectorAll('[data-c]').forEach(r=>r.onclick=()=>openChannel(+r.dataset.c));
+}
+function newChannel(){
+  let photo='';
+  modal(`<h2 style="margin:0 0 12px">کانال جدید</h2><div class="av ph" id="cph" title="تصویر کانال">📷</div><input class="f" id="cn" placeholder="نام کانال" maxlength="60">
+    <input class="f" id="chd" placeholder="لینک کانال (انگلیسی)، مثل my_news" dir="ltr"><input class="f" id="cd" placeholder="توضیحات (اختیاری)" maxlength="200">
+    <div class="err" id="cerr"></div><button class="btn" id="cok">ساخت کانال</button><button class="btn g" onclick="closeModal()">انصراف</button>`);
+  $('#cph').onclick=()=>pickImage(320,.85,true,d=>{photo=d;const e=$('#cph');e.style.background=`url("${d}") center/cover`;e.textContent=''});
+  $('#cok').onclick=async()=>{try{const j=await api('/channels','POST',{title:$('#cn').value,handle:$('#chd').value,description:$('#cd').value,photo:photo||undefined});
+    closeModal();await loadCh();openChannel(j.channel.id)}catch(e){$('#cerr').textContent=e.message}};
+}
+async function openChannel(id){
+  cur=await api('/channels/'+id);active=null;socket.emit('watch',id);setImg('');closePop();
+  $('#none').classList.add('hide');$('#chat').classList.add('hide');$('#chan').classList.remove('hide');$('#app').classList.add('open');
+  renderChan();renderList();
+}
+function chGiftPost(p){const g=p.gift,L=g.limited,s=g.sender;
+  const act=g.converted?`<div class="gsub">تبدیل شد به ⭐ ${g.refund}</div>`:(cur.ch.isOwner?`<button class="gbtn" onclick="event.stopPropagation();convertGift(${g.id})">تبدیل به ⭐ ${g.refund}</button>`:`<div class="gsub">⭐ ${g.price}</div>`);
+  return `<div class="gmsg" data-p="${p.id}" ${L?`style="${gBg(L)}"`:''}><div class="gem" style="${mFx(L)}">${g.emoji}</div><div class="gt">${esc(s.name)} یک هدیه به کانال فرستاد</div>${L?`<div class="lmt">لیمیتد ${limTag(L)}</div>`:''}<div class="gsub">${esc(g.name)}${g.converted?'':` · ⭐ ${g.price}`}</div>${g.note?`<div class="gnote">${esc(g.note)}</div>`:''}${act}</div>`}
+const ceOf=k=>{const m=/^ce:(\d+)$/.exec(k);return m&&cur&&cur.ch&&(cur.ch.emojis||[]).find(e=>e.id==m[1])};
+const EMC={'👍':'up','❤️':'hrt','😂':'lol','🔥':'fire','😮':'wow','🎉':'party','⭐':'star'};
+const rxK=k=>/^pe:/.test(k)?peImg(k):/^ce:/.test(k)?(ceOf(k)?`<img class="cem" src="${esc(ceOf(k).url)}" alt="">`:'❔'):`<span class="em ${EMC[k]?'e-'+EMC[k]:''}">${k}</span>`;
+function burst(k,r){
+  if(!r||matchMedia('(prefers-reduced-motion:reduce)').matches)return;
+  const h=rxK(k),N=k==='⭐'?5:8;
+  for(let n=0;n<N;n++){const p=document.createElement('i');p.className='bp';p.innerHTML=h;
+    p.style.left=(r.left+r.width/2)+'px';p.style.top=(r.top+r.height/2)+'px';
+    p.style.setProperty('--dx',((Math.random()-.5)*120)+'px');p.style.setProperty('--dy',(-55-Math.random()*80)+'px');p.style.setProperty('--rot',((Math.random()-.5)*100)+'deg');
+    p.style.fontSize=(15+Math.random()*13)+'px';p.style.animationDelay=(n*45)+'ms';
+    document.body.appendChild(p);setTimeout(()=>p.remove(),1300+n*45)}
+}
+const ceTxt=t=>peTxt(esc(t)).replace(/:ce(\d+):/g,(m,i)=>{const e=cur&&cur.ch&&(cur.ch.emojis||[]).find(x=>x.id==i);return e?`<img class="cem t" src="${esc(e.url)}" alt="">`:m});
+function rxHtml(p){const R=p.reactions||{};
+  return Object.keys(R).filter(k=>(R[k].count>0||R[k].mine)&&(!/^ce:/.test(k)||ceOf(k))&&(!/^pe:/.test(k)||peOf(k))).map(k=>{const r=R[k],lock=/^pe:/.test(k)&&!me.premium;
+    return `<button class="rx ${r.mine?'mine':''} ${lock?'lock':''}" data-p="${p.id}" data-k="${k}">${rxK(k)}${r.count?` <b>${r.count}</b>`:''}${lock?' 🔒':''}</button>`}).join('')}
+function renderChan(keep){
+  const {ch,posts}=cur,box=$('#posts'),sc=box.scrollTop;
+  $('#chh').innerHTML=`${chav(ch,'sm')}<div style="flex:1;min-width:0"><div class="nm">${chNm(ch,true)}${ch.level?`<span class="spon bst">⚡${ch.level}</span>`:''}</div><div class="st">${ch.subs.toLocaleString('fa-IR')} مشترک</div></div>`
+    +`<button class="pill" id="chMem" title="اعضای کانال" aria-label="اعضای کانال" style="margin-inline-end:6px">👥</button>`
+    +`<button class="pill" id="chBoost" title="بوست کانال" aria-label="بوست کانال" style="background:linear-gradient(90deg,#8e5bff,#ff4fa3);margin-inline-end:6px">⚡</button>`
+    +`<button class="pill" id="chGift" title="ارسال هدیه به کانال" aria-label="ارسال هدیه به کانال">🎁</button>`;
+  $('#chh').onclick=e=>{if(!e.target.closest('button'))channelProfile()};
+  $('#chGift').onclick=()=>giftShop(chTarget());$('#chBoost').onclick=boostModal;$('#chMem').onclick=membersModal;
+  $('#jbar').classList.toggle('hide',ch.isOwner);const jb=$('#jbtn');jb.textContent=ch.isSub?'ترک کانال':'عضویت';jb.className=ch.isSub?'leave':'';
+  jb.onclick=async()=>{try{Object.assign(ch,await api('/channels/'+ch.id+'/sub','POST',{on:!ch.isSub}));loadCh();renderChan(true)}catch(e){toast(e.message)}};
+  $('#cbar').classList.toggle('hide',!ch.isOwner);
+  let last='';
+  box.innerHTML=`<div class="chintro">${chav(ch,'')}<b>${esc(ch.title)}</b>${ch.description?`<span>${esc(ch.description)}</span>`:''}</div>`
+    +(posts.map(p=>{let d='';const k=new Date(p.at).toDateString();if(k!==last){last=k;d=`<div class="day">${same(p.at,Date.now())?'امروز':dy(p.at)}</div>`}
+      return d+(p.gift?chGiftPost(p):`<div class="post" data-pid="${p.id}">${p.img?`<img class="pimg" src="${esc(p.img)}" loading="lazy" alt="">`:''}${p.body?`<div class="pt">${ceTxt(p.body)}</div>`:''}<div class="rxs">${rxHtml(p)}</div><div class="pf"><span class="v">👁 ${(p.views||0).toLocaleString('fa-IR')}</span><span>${hm(p.at)}</span></div></div>`)}).join('')||`<div class="day">هنوز پستی منتشر نشده</div>`);
+  box.style.background=ch.bgImg?`url('${ch.bgImg}') center/cover`:(ch.bgColor||'');
+  box.scrollTop=keep?sc:box.scrollHeight;
+}
+function fly(r){
+  const f=document.createElement('div');f.className='fly';f.innerHTML='<b dir="ltr">−1 ⭐</b><span>استارز · +0.10 لول</span>';
+  f.style.left=(r.left+r.width/2)+'px';f.style.top=r.top+'px';document.body.appendChild(f);setTimeout(()=>f.remove(),1300);
+  for(let n=0;n<7;n++){const s=document.createElement('i'),a=Math.PI*(1+n/6);s.className='spark';s.textContent='✦';
+    s.style.left=f.style.left;s.style.top=(r.top+r.height/2)+'px';
+    s.style.setProperty('--dx',Math.cos(a)*(40+Math.random()*30)+'px');s.style.setProperty('--dy',Math.sin(a)*(40+Math.random()*30)+'px');
+    document.body.appendChild(s);setTimeout(()=>s.remove(),850)}
+}
+$('#posts').onclick=async e=>{
+  const gm=e.target.closest('.gmsg');if(gm&&cur){if(e.target.closest('.gbtn'))return;const p=cur.posts.find(x=>x.id==gm.dataset.p);if(p&&p.gift)giftDetail({...p.gift},me,cur.ch.isOwner,true);return}
+  const im=e.target.closest('.pimg');if(im){lightbox(im.src);return}
+  const b=e.target.closest('.rx');
+  if(b&&cur){const k=b.dataset.k;if(/^pe:/.test(k)&&!me.premium){premiumShop(me);return}
+    return doReact(b.dataset.p,k,b.getBoundingClientRect(),b)}
+  const pe=e.target.closest('.post');
+  if(pe&&cur){if(String(getSelection()).length)return;const same=$('#rxpop')&&$('#rxpop').dataset.p==pe.dataset.pid;closePop();if(!same)openPop(pe,+pe.dataset.pid)}};
+async function doReact(id,k,r,btn){
+  try{const j=await api('/posts/'+id+'/react','POST',{kind:k});const p=cur.posts.find(x=>x.id==id);
+    p.reactions=p.reactions||{};p.reactions[k]={count:j.count,mine:j.mine};(j.removed||[]).forEach(o=>{p.reactions[o.kind]={count:o.count,mine:0}});me.stars=j.stars;me.level=j.level;renderChan(true);
+    const nb=document.querySelector(`.rx[data-p="${id}"][data-k="${k}"]`);if(nb)nb.classList.add('pop');if(j.mine)burst(k,r);if(k==='⭐')fly(r)}
+  catch(x){if(btn)btn.classList.add('shake');toast(x.message)}}
+function closePop(){const p=$('#rxpop');if(p)p.remove()}
+function openPop(el,pid){
+  const p=cur.posts.find(x=>x.id==pid);if(!p)return;const R=p.reactions||{};
+  const bt=(k,lock)=>`<button class="pk ${R[k]&&R[k].mine?'mine':''} ${lock?'lock':''}" data-k="${k}">${rxK(k)}</button>`;
+  const d=document.createElement('div');d.id='rxpop';d.dataset.p=pid;
+  d.innerHTML=`<div class="pkh">⭐ یک استارز از موجودی شما (${me.stars||0}) کم می‌کند${me.premium?'':' · بدون پریمیوم فقط یک ری‌اکشن رایگان'}</div><div class="pkg">${bt('⭐')+FREE.map(k=>bt(k)).join('')+PEL.map(e=>bt('pe:'+e.id,!me.premium)).join('')+(cur.ch.emojis||[]).map(e=>bt('ce:'+e.id)).join('')}</div>`;
+  document.body.appendChild(d);
+  const r=el.getBoundingClientRect(),w=d.offsetWidth,h=d.offsetHeight;
+  let top=r.top-h-6;if(top<8)top=r.bottom+6;if(top+h>innerHeight-8)top=Math.max(8,Math.min(r.top+r.height/2-h/2,innerHeight-h-8));
+  d.style.top=top+'px';d.style.left=Math.max(8,Math.min(r.left,innerWidth-w-8))+'px';
+  d.onclick=e=>{const b=e.target.closest('.pk');if(!b)return;const k=b.dataset.k,rc=b.getBoundingClientRect();closePop();
+    if(/^pe:/.test(k)&&!me.premium){premiumShop(me);return}doReact(pid,k,rc)};
+}
+document.addEventListener('click',e=>{if(!e.target.closest('#rxpop')&&!e.target.closest('.post'))closePop()},true);
+document.addEventListener('keydown',e=>{if(e.key==='Escape')closePop()});
+$('#posts').addEventListener('scroll',closePop,{passive:true});
+let pendImg='';
+function setImg(d){pendImg=d||'';$('#cprev').classList.toggle('hide',!pendImg||!(cur&&cur.ch.isOwner));if(pendImg)$('#cprevi').src=pendImg}
+$('#cattach').onclick=()=>pickImage(1280,.82,false,setImg);$('#cprevx').onclick=()=>setImg('');
+async function pubPost(){const t=$('#cin'),body=t.value.trim();if((!body&&!pendImg)||!cur)return;
+  try{await api('/channels/'+cur.ch.id+'/posts','POST',{body,image:pendImg||undefined});t.value='';t.style.height='auto';setImg('')}catch(e){toast(e.message)}}
+function channelProfile(){
+  const ch=cur.ch,st=ch.stats||{posts:0,photos:0},fa=n=>Number(n).toLocaleString('fa-IR');
+  const bo=ch.boost||{count:0,level:0,cur:0,next:null},pct=bo.next?Math.max(3,Math.min(100,(bo.count-bo.cur)/(bo.next-bo.cur)*100)):100;
+  const pc=ch.profileColor||'';
+  const hsty=pc?`background:linear-gradient(160deg,${esc(pc)},color-mix(in srgb,${esc(pc)} 55%,#000))!important;color:#fff!important`:'';
+  const row=(l,v,ic='',lead='',id='',cls='')=>`<div class="prow ${cls}"${id?` id="${id}"`:''}><span class="pli">${lead}</span><div class="ptxt"><div class="pv">${v}</div><div class="pl">${l}</div></div>${ic}</div>`;
+  const link='@'+ch.handle;
+  modal(`<div class="phead${pc?' pcol':''}"${hsty?` style="${hsty}"`:''}>
+    <div class="pbar"><button class="pib" id="pcl" title="بستن">${IC.x}</button>${ch.isOwner?`<button class="pib" id="che" title="ویرایش کانال">${IC.pen}</button>`:''}</div>
+    <div class="pavw">${chav(ch,'big')}</div><div class="pn">${chNm(ch,true)}</div>
+    <div class="ps"><span>${fa(ch.subs)} مشترک</span>${ch.level?`<span class="spon bst">⚡${ch.level}</span>`:''}</div></div>
+   <div class="pqa"><button id="chm"><span>👥</span>اعضا</button><button id="chb"><span>⚡</span>بوست</button><button id="chg"><span>🎁</span>هدیه</button>${ch.isOwner?`<button id="chmg"><span>⚙️</span>مدیریت</button>`:`<button id="chj"><span>${ch.isSub?'🚪':'➕'}</span>${ch.isSub?'ترک کانال':'عضویت'}</button>`}</div>
+   <div class="pbody">
+   ${row('لینک · برای کپی بزنید',`<span dir="ltr" style="unicode-bidi:embed">${esc(link)}</span>`,`<button class="pib pq" title="کپی لینک">${IC.qr}</button>`,'🔗','chl','clk')}
+   ${ch.description?row('توضیحات',`<span style="white-space:pre-wrap;unicode-bidi:plaintext">${esc(ch.description)}</span>`,'','ℹ️'):''}
+   <div class="prow clk" id="chbx"><span class="pli">⚡</span><div class="ptxt"><div class="pv">سطح ${fa(bo.level)} · ${fa(bo.count)} بوست</div><div class="bstbar" style="margin-top:6px"><i style="width:${pct}%"></i></div></div></div></div>
+   <div class="pgs" style="padding:4px 0 6px">
+     ${row('عکس',fa(st.photos),'','🖼')}${row('پست',fa(st.posts),'','📝')}</div>
+   <div class="pgs"><div class="pgh">هدیه‌ها <span id="pgn"></span></div><div class="pgg" id="pgifts"><span class="st">…</span></div></div>`,'pcard');
+  $('#pcl').onclick=closeModal;
+  $('#chg').onclick=()=>giftShop(chTarget());$('#chb').onclick=boostModal;$('#chbx').onclick=boostModal;$('#chm').onclick=membersModal;
+  $('#chl').onclick=async()=>{try{await navigator.clipboard.writeText(link);toast('لینک کپی شد')}catch{toast(link)}};
+  if(ch.isOwner){$('#che').onclick=editChannel;$('#chmg').onclick=editChannel}
+  else $('#chj').onclick=async()=>{try{Object.assign(ch,await api('/channels/'+ch.id+'/sub','POST',{on:!ch.isSub}));loadCh();renderChan(true);channelProfile()}catch(e){toast(e.message)}};
+  loadGifts({chProfile:true},ch.isOwner,'/channels/'+ch.id+'/gifts');
+}
+
+/* ---- اعضای کانال ---- */
+async function membersModal(){
+  if(!cur||!cur.ch)return;const ch=cur.ch;let j;
+  try{j=await api('/channels/'+ch.id+'/members')}catch(e){return toast(e.message)}
+  modal(`<div class="chp"><h2 style="margin:0 0 4px;text-align:center">👥 اعضای ${esc(ch.title)}</h2>
+    <div class="st" style="text-align:center">${Number(j.total).toLocaleString('fa-IR')} عضو</div>
+    <div class="mlist">${j.members.map(u=>`<div class="mrow" data-u="${u.id}">${av(u,'sm')}<div class="mid"><div class="nm">${nm(u)}</div><div class="sub">@${esc(u.username)}</div></div>${u.isOwner?'<span class="tg pr">مالک</span>':''}</div>`).join('')||'<div class="st" style="text-align:center">هنوز عضوی نیست.</div>'}</div>
+    <button class="btn g" id="memcl">بستن</button></div>`);
+  $('#memcl').onclick=closeModal;
+  $('.mlist').onclick=e=>{const r=e.target.closest('[data-u]');if(!r)return;const u=j.members.find(x=>x.id===+r.dataset.u);if(u)openProfile(u)};
+}
+
+/* ---- بوست کانال ---- */
+async function boostModal(){
+  if(!cur)return;const ch=cur.ch;let j;
+  try{j=await api('/channels/'+ch.id+'/boosts')}catch(e){return toast(e.message)}
+  Object.assign(ch,j.info);const b=ch.boost,pct=b.next?Math.max(3,Math.min(100,(b.count-b.cur)/(b.next-b.cur)*100)):100;
+  const fa=n=>Number(n).toLocaleString('fa-IR');
+  const reset=new Date(b.resetAt).toLocaleTimeString('fa-IR',{hour:'2-digit',minute:'2-digit'});
+  const q0=Math.min(1,b.left);
+  modal(`<div class="chp"><h2 style="margin:0 0 4px;text-align:center">⚡ بوست ${chNm(ch)}</h2>
+    <div class="st" style="text-align:center">با بوست، کانال به سطح‌های بالاتر می‌رسد و امکانات ویژه باز می‌شود</div>
+    <div class="bstbox"><div class="bstl"><b>سطح ${fa(b.level)}</b><span>${fa(b.count)}${b.next?' / '+fa(b.next):''} بوست</span></div><div class="bstbar"><i style="width:${pct}%"></i></div>
+      <div class="bsth">${b.next?`${fa(b.next-b.count)} بوست دیگر تا سطح ${fa(b.level+1)}`:'به بالاترین سطح رسیده است 🎉'}</div></div>
+    <div class="perks">${j.perks.map(p=>`<div class="${b.level>=p.lvl?'':'lk'}">${b.level>=p.lvl?'✅':'🔒'} سطح ${fa(p.lvl)} (${fa(j.levels[p.lvl-1])} بوست): ${esc(p.text)}</div>`).join('')}</div>
+    <div class="bsth" style="text-align:right">شما ${fa(b.mine)} بوست روی این کانال دارید · امروز ${fa(b.left)} از ${fa(j.daily)} بوست باقی مانده (ریست ساعت ${reset}) · هر بوست ${fa(j.days)} روز اعتبار دارد</div>
+    <div class="bqty" id="bqty"><input id="bq" type="number" min="1" max="${b.left}" value="${q0}" ${b.left?'':'disabled'}>${[1,5,10,25].filter(n=>n<b.left).map(n=>`<button data-n="${n}">${fa(n)}</button>`).join('')}${b.left>1?`<button data-n="${b.left}">همه (${fa(b.left)})</button>`:''}</div>
+    <button class="btn" id="bgo" style="background:linear-gradient(90deg,#8e5bff,#ff4fa3)" ${b.left?'':'disabled'}>${b.left?'⚡ بوست':'بوست‌های امروز تمام شد'}</button>
+    ${j.boosters.length?`<div class="pgh" style="margin-top:14px;text-align:right">بوست‌کننده‌ها</div><div class="bstrs">${j.boosters.map(u=>`<div class="bstr">${av(u,'sm')}<span class="nm">${nm(u)}</span><b>⚡${fa(u.boosts)}</b></div>`).join('')}</div>`:''}
+    <button class="btn g" id="bcl">بستن</button></div>`);
+  $('#bcl').onclick=closeModal;
+  $('#bqty').onclick=e=>{const t=e.target.closest('[data-n]');if(t)$('#bq').value=t.dataset.n};
+  $('#bgo').onclick=async()=>{const n=Math.floor(+$('#bq').value);if(!(n>=1))return toast('تعداد بوست را وارد کنید');
+    const bt=$('#bgo');bt.disabled=true;
+    try{const r=await api('/channels/'+ch.id+'/boost','POST',{n});Object.assign(ch,r.info);renderChan(true);loadCh();toast(`⚡ ${fa(r.added)} بوست ثبت شد`);boostModal()}
+    catch(e){toast(e.message);bt.disabled=false}}
+}
+function editChannel(){
+  const ch=cur.ch,lv=ch.level||0;let photo='',rm=false,nc=ch.nameColor||'',pc=ch.profileColor||'',bgc=ch.bgColor||'',bgp='',rbg=false;
+  modal(`<h2 style="margin:0 0 12px">ویرایش کانال</h2><div class="av ph" id="eph" title="تغییر تصویر"></div>
+    <div style="text-align:center;margin-bottom:10px"><button class="pill" id="epx" style="background:var(--side);color:var(--txt)">حذف تصویر</button></div>
+    <input class="f" id="cn" maxlength="60" placeholder="نام کانال"><input class="f" id="cd" maxlength="200" placeholder="توضیحات">
+    <div class="crow ${lv>=1?'':'off'}"><span>🎨 رنگ نام کانال${lv>=1?'':' (سطح ۱)'}</span><input type="color" id="enc" ${lv>=1?'':'disabled'} value="${esc(nc||'#3390ec')}"><button id="encx" ${lv>=1?'':'disabled'}>حذف</button></div>
+    <div class="crow ${lv>=2?'':'off'}"><span>🖼 رنگ هدر پروفایل${lv>=2?'':' (سطح ۲)'}</span><input type="color" id="epc" ${lv>=2?'':'disabled'} value="${esc(pc||'#3390ec')}"><button id="epcx" ${lv>=2?'':'disabled'}>حذف</button></div>
+    <div class="crow ${lv>=3?'':'off'}"><span>😎 ایموجی استاتوس${lv>=3?'':' (سطح ۳)'}</span><input class="f" type="text" id="ees" maxlength="8" style="margin:0" ${lv>=3?'':'disabled'} value="${esc(ch.emojiStatus||'')}"></div>
+    <div class="crow ${lv>=3?'':'off'}"><span>🌄 رنگ پس‌زمینه‌ی کانال${lv>=3?'':' (سطح ۳)'}</span><input type="color" id="ebc" ${lv>=3?'':'disabled'} value="${esc(bgc||'#d6e4cb')}"><button id="ebcx" ${lv>=3?'':'disabled'}>حذف</button></div>
+    <div class="crow ${lv>=3?'':'off'}"><span>🖼 عکس پس‌زمینه${lv>=3?'':' (سطح ۳)'}<b id="ebpn" style="color:var(--acc)"></b></span><button id="ebp" ${lv>=3?'':'disabled'}>انتخاب</button><button id="ebpx" ${lv>=3?'':'disabled'}>حذف</button></div>
+    <button class="btn g" id="cem" ${lv>=3?'':'disabled'} style="margin-bottom:8px">😀 ایموجی‌های اختصاصی کانال${lv>=3?` (${(ch.emojis||[]).length})`:' (سطح ۳)'}</button>
+    <div class="err" id="cerr"></div><button class="btn" id="cok">ذخیره</button><button class="btn g" id="cbk">بازگشت</button>`);
+  $('#enc').oninput=e=>nc=e.target.value;$('#encx').onclick=()=>{nc='';$('#enc').value='#3390ec'};
+  $('#epc').oninput=e=>pc=e.target.value;$('#epcx').onclick=()=>{pc='';$('#epc').value='#3390ec'};
+  $('#ebc').oninput=e=>bgc=e.target.value;$('#ebcx').onclick=()=>{bgc='';$('#ebc').value='#d6e4cb'};
+  const bgn=()=>$('#ebpn').textContent=bgp?' ✓ انتخاب شد':(rbg?' (حذف می‌شود)':(ch.bgImg?' ✓ دارد':''));bgn();
+  $('#ebp').onclick=()=>pickImage(1024,.7,false,d=>{bgp=d;rbg=false;bgn()});$('#ebpx').onclick=()=>{bgp='';rbg=true;bgn()};
+  $('#cem').onclick=emojiManager;
+  $('#cn').value=ch.title;$('#cd').value=ch.description||'';
+  const paint=()=>{const e=$('#eph'),src=photo||(!rm&&ch.photo);e.style.background=src?`url("${src}") center/cover`:COL[ch.id%7];e.textContent=src?'':'📷'};paint();
+  $('#eph').onclick=()=>pickImage(320,.85,true,d=>{photo=d;rm=false;paint()});
+  $('#epx').onclick=()=>{photo='';rm=true;paint()};
+  $('#cbk').onclick=channelProfile;
+  $('#cok').onclick=async()=>{try{const j=await api('/channels/'+ch.id,'PATCH',{title:$('#cn').value,description:$('#cd').value,...(photo?{photo}:rm?{removePhoto:true}:{}),...(lv>=1?{nameColor:nc}:{}),...(lv>=2?{profileColor:pc}:{}),...(lv>=3?{emojiStatus:$('#ees').value.trim(),bgColor:bgc,...(bgp?{bgPhoto:bgp}:rbg?{removeBgPhoto:true}:{})}:{})});
+    Object.assign(cur.ch,j.channel);renderChan(true);loadCh();channelProfile()}catch(e){$('#cerr').textContent=e.message}};
+}
+function emojiManager(){
+  const ch=cur.ch,es=ch.emojis||[],fa=n=>Number(n).toLocaleString('fa-IR');
+  modal(`<h2 style="margin:0 0 4px;text-align:center">😀 ایموجی‌های ${esc(ch.title)}</h2>
+    <div class="st" style="text-align:center">${fa(es.length)} از ۱۰ · زیر پست‌ها به‌عنوان ری‌اکشن برای همه فعال است؛ برای درج در متن پست، روی ایموجی بزنید</div>
+    <div class="cegrid">${es.map(e=>`<div class="ceit"><img class="cem big" data-i="${e.id}" src="${esc(e.url)}" alt=""><button data-d="${e.id}" title="حذف">✕</button></div>`).join('')||'<span class="st">هنوز ایموجی‌ای نیست.</span>'}</div>
+    <button class="btn" id="cea" ${es.length>=10?'disabled':''}>➕ افزودن ایموجی از عکس</button><div class="err" id="cerr"></div><button class="btn g" id="ceb">بازگشت</button>`);
+  $('#ceb').onclick=editChannel;
+  $('#cea').onclick=()=>pickImage(128,.85,true,async d=>{try{const j=await api('/channels/'+ch.id+'/emojis','POST',{image:d});ch.emojis=j.emojis;emojiManager()}catch(e){$('#cerr').textContent=e.message}});
+  document.querySelector('.cegrid').onclick=async e=>{
+    const x=e.target.closest('[data-d]');
+    if(x){if(!confirm('این ایموجی حذف شود؟ ری‌اکشن‌های آن هم پاک می‌شوند.'))return;
+      try{const j=await api('/channels/'+ch.id+'/emojis/'+x.dataset.d,'DELETE');ch.emojis=j.emojis;renderChan(true);emojiManager()}catch(er){toast(er.message)}return}
+    const im=e.target.closest('[data-i]');
+    if(im){const t=$('#cin');if(t){t.value+=`:ce${im.dataset.i}:`;toast('در کادر پست درج شد')}}};
+}
+$('#csend').onclick=pubPost;$('#cin').onkeydown=e=>{if(e.key==='Enter'&&!e.shiftKey&&!e.isComposing){e.preventDefault();pubPost()}};
+
+/* ---- بازگردانی بکاپ (ادمین) ---- */
+$('#arest').onclick=()=>{const i=document.createElement('input');i.type='file';i.accept='.db,application/octet-stream';
+  i.onchange=async()=>{const f=i.files[0];if(!f)return;
+    if(!confirm(`با «${f.name}» همه‌ی اطلاعات فعلی (کاربران، پیام‌ها، کانال‌ها...) جایگزین می‌شود. ادامه می‌دهید؟\n(قبل از آن یک نسخه‌ی امن از وضعیت فعلی روی سرور ذخیره می‌شود.)`))return;
+    const b=$('#arest');b.disabled=true;b.textContent='در حال بارگذاری…';
+    try{const r=await fetch('/api/admin/restore',{method:'POST',headers:{'Content-Type':'application/octet-stream'},body:f}),j=await r.json();
+      if(!r.ok)throw new Error(j.error||'خطا');alert('بکاپ با موفقیت بازگردانی شد. صفحه دوباره بارگذاری می‌شود.');location.reload()}
+    catch(e){alert(e.message);b.disabled=false;b.textContent='⬆ بارگذاری بکاپ'}};i.click()};
+
+/* ---- profile ---- */
+// الگوی ایموجیِ محو دور آواتار (مثل هدر پروفایل تلگرام)
+const pPat=e=>{let x='';[[80,6,.05,.26],[130,10,0,.19],[182,14,.03,.13]].forEach(([r,n,o,op])=>{for(let i=0;i<n;i++){const a=(i/n+o)*2*Math.PI;
+  x+=`<span style="left:calc(50% + ${Math.round(Math.cos(a)*r)}px);top:${Math.round(104+Math.sin(a)*r*.78)}px;opacity:${op};font-size:${r>150?18:22}px">${esc(e)}</span>`}});
+  return `<div class="ppat" aria-hidden="true">${x}</div>`};
+const IC={
+  pen:'<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z"/></svg>',
+  x:'<svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg>',
+  qr:'<svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><path d="M14 14h3v3h-3zM20 14v1M14 20h1M18 18h3v3h-3z"/></svg>',
+  shield:'<svg viewBox="0 0 24 24" width="15" height="15" fill="currentColor"><path d="M12 2 4 5v6c0 5 3.4 9.4 8 11 4.6-1.6 8-6 8-11V5z"/></svg>'
+};
+async function openProfile(u){
+  const isMe=u.id===me.id;
+  if(!isMe){try{u=(await api('/users/'+u.id)).user}catch{}}else u=me;
+  const row=(l,v,ic='',lead='')=>`<div class="prow">${lead?`<span class="pli">${lead}</span>`:''}<div class="ptxt"><div class="pv">${v}</div><div class="pl">${l}</div></div>${ic}</div>`;
+  const lv=+(u.level||0).toFixed(2);
+  const pc=u.premium&&u.profileColor?u.profileColor:'';
+  const W=u.wear,WL=W&&W.limited,T=WL&&WL.traits;
+  const hcls=W?' pw':(pc?' pcol':'');
+  const hsty=T?`background:radial-gradient(circle at 50% 30%,${T.backdrop.c1},${T.backdrop.c2})!important;color:#fff!important`
+    :(WL?`${limBg(WL.color)}!important;color:#fff!important`:(pc?`background:linear-gradient(160deg,${esc(pc)},color-mix(in srgb,${esc(pc)} 55%,#000))!important;color:#fff!important`:''));
+  const ppat=T?pPat(T.symbol.emoji):(u.premium&&pc&&u.emojiStatus?pPat(u.emojiStatus):'');
+  const wbtn=W?`<button class="pwear" id="pwb" title="${esc(W.name)} #${WL.serial}" style="${gBg(WL)}"><span style="${mFx(WL)}">${W.emoji}</span></button>`:'';
+  const pqa=isMe?`<div class="pqa"><button id="ppm"><span>👑</span>پریمیوم</button><button id="pgs"><span>🎁</span>هدیه برای خودم</button><button id="ppw"><span>🔑</span>${u.number?'تنظیم رمز':'تغییر رمز'}</button></div>`
+    :`<div class="pqa"><button id="pm"><span>💬</span>پیام</button><button id="pg"><span>🎁</span>ارسال هدیه</button><button id="pbl"><span>🚫</span>${u.blockedByMe?'رفع بلاک':'بلاک'}</button><button id="pdc"><span>🗑</span>حذف گفتگو</button></div>`;
+  modal(`<div class="phead${hcls}"${hsty?` style="${hsty}"`:''}>${ppat}
+    <div class="pbar"><button class="pib" id="pcl" title="بستن">${IC.x}</button>${isMe?`<button class="pib" id="pe" title="ویرایش پروفایل">${IC.pen}</button>`:''}</div>
+    <div class="pavw">${av(u,'big')}${wbtn}</div><div class="pn">${nm(u)}</div>
+    <div class="ps"><span class="lvlb" title="لول ${lv}">${IC.shield}<b>${lv}</b></span><span>${isMe?'آنلاین':seen(u)}</span></div></div>
+   ${pqa}
+   <div class="pbody">
+   ${row('درباره',u.bio?esc(u.bio):'<span class="st">—</span>','','ℹ️')}
+   <div class="prow clk" id="pun"><span class="pli">@</span><div class="ptxt"><div class="pv">@${esc(u.username)}</div><div class="pl">نام کاربری · برای کپی بزنید</div></div><button class="pib pq" id="pqr" title="کپی نام کاربری">${IC.qr}</button></div>
+   ${isMe&&u.number?row('شماره (هنوز برای ورود لازم است)',`<span class="num2">${esc(u.number)}</span>`,'','📱'):''}
+   ${isMe?row('استارز',`⭐ ${me.stars||0}${u.premium?'<span class="lvl">👑 پریمیوم</span>':''}`,'','⭐'):''}</div>
+   <div class="pgs"><div class="pgh">هدیه‌ها <span id="pgn"></span></div><div class="pgg" id="pgifts"><span class="st">…</span></div></div>
+   ${isMe?`<div class="pset"><button id="ppw2"><span class="ic" style="background:#3390ec">🔑</span>${u.number?'تنظیم رمز و حذف شماره':'تغییر رمز'}${u.number?'<span class="hint">پیشنهاد می‌شود</span>':''}</button>
+     <button id="pe2"><span class="ic" style="background:#4caf50">✏️</span>ویرایش پروفایل</button>
+     <button id="plo" class="red"><span class="ic" style="background:#e53935">⎋</span>خروج از حساب</button></div>`:''}`,'pcard');
+  $('#pcl').onclick=closeModal;
+  if(W)$('#pwb').onclick=()=>giftDetail(W,u,isMe);
+  $('#pun').onclick=()=>{try{navigator.clipboard.writeText('@'+u.username);toast('نام کاربری کپی شد')}catch{}};
+  if(isMe){$('#pe').onclick=$('#pe2').onclick=editProfile;$('#ppm').onclick=()=>premiumShop(me);$('#pgs').onclick=()=>giftShop(me);$('#ppw').onclick=$('#ppw2').onclick=setPassword;$('#plo').onclick=()=>api('/logout','POST').then(()=>location.reload())}
+  else{$('#pm').onclick=()=>{closeModal();openChat(u)};$('#pg').onclick=()=>giftShop(u);
+    $('#pbl').onclick=async()=>{const want=!u.blockedByMe;if(want&&!confirm('این کاربر بلاک شود؟ دیگر نمی‌توانید به هم پیام یا هدیه بدهید.'))return;
+      try{const j=await api('/blocks/'+u.id,'POST',{block:want});u.blockedByMe=j.blocked;if(active&&active.id===u.id)active.blockedByMe=j.blocked;toast(j.blocked?'کاربر بلاک شد 🚫':'بلاک برداشته شد ✅');openProfile(u)}catch(e){toast(e.message)}};
+    $('#pdc').onclick=async()=>{if(!confirm('کل این گفتگو فقط برای شما پاک شود؟ (برای طرف مقابل باقی می‌ماند)'))return;
+      try{await api('/chats/'+u.id,'DELETE');if(active&&active.id===u.id){msgs=[];renderMsgs()}loadChats();closeModal();toast('گفتگو حذف شد 🗑')}catch(e){toast(e.message)}}}
+  loadGifts(u,isMe);
+}
+const PAL=['#e17076','#faa774','#a695e7','#7bc862','#6ec9cb','#65aadd','#ee7aae','#f5a623'];
+const EMO=['😎','🔥','💎','🚀','🦄','🌙','⚡','🎯','❤️','🌈','👑','🎮','🤩','🥳','💯','🫶','🪐','🐉','🍀','🎧','🏆','🌟','🦋','🍉'];
+function setPassword(){
+  const legacy=!!me.number;
+  modal(`<h2 style="margin:0 0 6px">${legacy?'تنظیم رمز ورود':'تغییر رمز ورود'}</h2>
+   <p class="st" style="margin:0 0 12px;line-height:1.7">${legacy?'با تنظیم رمز، شماره‌ی شما از حساب حذف می‌شود و از این به بعد فقط با نام کاربری و رمز وارد می‌شوید.':'رمز جدید جایگزین رمز فعلی می‌شود.'}</p>
+   <input class="f" id="pw0" type="password" dir="ltr" autocomplete="current-password" placeholder="${legacy?'شماره‌ی فعلی برای تأیید (مثلاً +98912…)':'رمز فعلی'}">
+   <input class="f" id="pw1" type="password" dir="ltr" autocomplete="new-password" minlength="6" placeholder="رمز جدید (حداقل ۶ کاراکتر)">
+   <input class="f" id="pw2" type="password" dir="ltr" autocomplete="new-password" placeholder="تکرار رمز جدید">
+   <div class="err" id="pwerr"></div><button class="btn" id="pwok">ذخیره</button><button class="btn g" onclick="openProfile(me)">انصراف</button>`);
+  $('#pwok').onclick=async()=>{const e=$('#pwerr');e.textContent='';
+    if($('#pw1').value!==$('#pw2').value)return e.textContent='تکرار رمز با رمز جدید یکی نیست';
+    try{me=(await api('/me/password','POST',{current:$('#pw0').value,password:$('#pw1').value})).me;toast(legacy?'رمز تنظیم شد و شماره حذف شد ✅':'رمز تغییر کرد ✅');openProfile(me)}catch(x){e.textContent=x.message}};
+}
+function editProfile(){
+  const P=!!me.premium,maxB=P?140:70;let nc=me.rawNameColor||'',pc=me.rawProfileColor||'';
+  const sw=(t,cur)=>`<div class="sw" data-t="${t}">${PAL.map(c=>`<button type="button" class="swb ${c===cur?'on':''}" data-c="${c}" style="background:${c}"></button>`).join('')}<button type="button" class="swb none ${!cur?'on':''}" data-c="">✕</button></div>`;
+  modal(`<h2 style="margin:0 0 12px">ویرایش پروفایل</h2><div style="text-align:center;margin-bottom:10px"><div class="av ph" id="eph" style="margin:0 auto 6px"></div><button type="button" class="btn g" id="epx" style="width:auto;padding:6px 14px;margin:0">حذف عکس</button></div><input class="f" id="en" value="${esc(me.name)}" maxlength="40" placeholder="نام">
+   <input class="f" id="eb" value="${esc(me.bio||'')}" maxlength="${maxB}" placeholder="درباره‌ی من (حداکثر ${maxB} حرف)">
+   ${P?`<div class="psec"><div class="pst">👑 امکانات پریمیوم</div>
+     <div class="pl">ایموجی استاتوس (کنار نام)</div><input class="f" id="ee" value="${esc(me.rawEmoji||'')}" maxlength="12" placeholder="مثلاً 😎" style="margin:6px 0">
+     <div class="emo">${EMO.map(e=>`<button type="button" class="eb" data-e="${e}">${e}</button>`).join('')}</div>
+     <div class="pl" style="margin-top:10px">رنگ نام</div>${sw('nc',nc)}
+     <div class="pl" style="margin-top:10px">رنگ پروفایل</div>${sw('pc',pc)}</div>`
+   :`<div class="psec lockd"><div class="pst">✨ ویژه‌ی پریمیوم</div><div class="pl">ایموجی استاتوس، رنگ نام و رنگ پروفایل + ۲ برابر شدن محدودیت‌ها</div>
+     <button type="button" class="btn g" id="egp" style="margin-top:8px">👑 دریافت پریمیوم</button></div>`}
+   <div class="err" id="eerr"></div>
+   <button class="btn" id="eok">ذخیره</button><button class="btn g" onclick="openProfile(me)">انصراف</button>`);
+  let uph='',urm=false;
+  const upaint=()=>{const e=$('#eph'),src=uph||(!urm&&me.photo);e.style.background=src?`url("${src}") center/cover`:COL[me.id%7];e.textContent=src?'':'📷'};upaint();
+  $('#eph').onclick=()=>pickImage(320,.85,true,d=>{uph=d;urm=false;upaint()});
+  $('#epx').onclick=()=>{uph='';urm=true;upaint()};
+  if(P){
+    document.querySelectorAll('.eb').forEach(b=>b.onclick=()=>{$('#ee').value=b.dataset.e});
+    document.querySelectorAll('.sw').forEach(w=>w.querySelectorAll('.swb').forEach(b=>b.onclick=()=>{
+      w.querySelectorAll('.swb').forEach(x=>x.classList.remove('on'));b.classList.add('on');
+      if(w.dataset.t==='nc')nc=b.dataset.c;else pc=b.dataset.c}));
+  }else $('#egp').onclick=()=>premiumShop(me);
+  $('#eok').onclick=async()=>{try{
+    const body={name:$('#en').value,bio:$('#eb').value};if(P){body.emojiStatus=$('#ee').value.trim();body.nameColor=nc;body.profileColor=pc}
+    if(uph)body.photo=uph;else if(urm)body.removePhoto=true;
+    me=(await api('/me','PATCH',body)).me;$('#meBtn').innerHTML=av(me,'sm');openProfile(me)}catch(e){$('#eerr').textContent=e.message}};
+}
+
+/* ---- premium ---- */
+async function premiumShop(to){
+  const self=!to||to.id===me.id,{plans}=await api('/premium');
+  const fd=t=>new Date(t).toLocaleDateString('fa-IR');
+  const status=self?(me.permanent?'پریمیوم شما دائمی است 👑':(me.premiumUntil>Date.now()?`پریمیوم شما تا ${fd(me.premiumUntil)} فعال است 👑`:'پریمیوم شما فعال نیست')):'';
+  const nmn=n=>({1:'۱ ماهه',3:'۳ ماهه',12:'۱۲ ماهه'}[n]||n+' ماهه');
+  modal(`<div class="prm"><div class="gem big">👑</div><h3 style="margin:6px 0 2px">${self?'پریمیوم':'هدیه‌ی پریمیوم برای '+esc(to.name)}</h3>
+    ${status?`<div class="st" style="margin-bottom:8px">${status}</div>`:''}
+    <ul class="pfe"><li>🎨 رنگ ویژه برای نام و پروفایل</li><li>😎 ایموجی استاتوس کنار نام</li><li>💎 ایموجی‌های ویژه (عکسی) در پیام و ری‌اکشن</li><li>📈 محدودیت دو برابر: ۲۰ کانال، بیو ۱۴۰ حرفی، پیام ۸۰۰۰ حرفی</li><li>★ نشان پریمیوم کنار نام</li></ul>
+    <div class="st" style="margin:8px 0">موجودی شما: ⭐ ${me.stars||0}</div>
+    <div class="err" id="perr"></div>
+    ${plans.map(p=>`<button class="btn plan" data-p="${p.id}">${nmn(p.months)} · ⭐ ${p.price}</button>`).join('')}
+    <button class="btn g" id="pbk">بستن</button></div>`);
+  $('#pbk').onclick=()=>closeModal();
+  document.querySelectorAll('.plan').forEach(b=>b.onclick=async()=>{b.disabled=true;
+    try{const j=await api('/premium/buy','POST',{plan:b.dataset.p,...(self?{}:{to:to.id})});me=j.me;$('#meBtn').innerHTML=av(me,'sm');
+      if(self){toast('پریمیوم فعال شد 👑');premiumShop(me)}else{closeModal();toast('پریمیوم هدیه داده شد 👑');if(!active||active.id!==to.id)openChat(to)}}
+    catch(e){$('#perr').textContent=e.message;b.disabled=false}});
+}
+
+/* ---- gifts ---- */
+let GIFTS=null;
+const limBg=c=>`background:linear-gradient(145deg,${c},color-mix(in srgb,${c} 45%,#000))`;
+const limTag=l=>`#${l.serial} / ${l.supply}`;
+const fa=n=>Number(n).toLocaleString('fa-IR',{maximumFractionDigits:2}),pc=p=>`<span class="pc">${fa(p)}٪</span>`;
+const gBg=L=>L.traits?`background:radial-gradient(circle at 50% 38%,${L.traits.backdrop.c1},${L.traits.backdrop.c2})`:limBg(L.color);
+const mFx=L=>L&&L.traits&&L.traits.model.hue?`filter:hue-rotate(${L.traits.model.hue}deg) saturate(${L.traits.model.sat||1})`:'';
+const gPat=L=>{if(!L.traits)return'';const e=L.traits.symbol.emoji;let x='';
+  [[62,8,0],[118,14,.2]].forEach(([r,n,o])=>{for(let i=0;i<n;i++){const a=(i/n+o)*2*Math.PI;x+=`<span style="left:calc(50% + ${Math.round(Math.cos(a)*r*1.5)}px);top:calc(50% + ${Math.round(Math.sin(a)*r*.75)}px)">${e}</span>`}});
+  return `<div class="gpat" aria-hidden="true">${x}</div>`};
+function giftCard(m,o){const g=m.gift;
+  const who=o?'شما یک هدیه فرستادید':'هدیه‌ای برای شما فرستاده شد';
+  const act=g.converted?`<div class="gsub">تبدیل شد به ⭐ ${g.refund}</div>`
+    :(!o?`<button class="gbtn" onclick="event.stopPropagation();convertGift(${g.id})">تبدیل به ⭐ ${g.refund}</button>`:`<div class="gsub">⭐ ${g.price}</div>`);
+  const L=g.limited;
+  return `<div class="gmsg" data-m="${m.id}" ${L?`style="${gBg(L)}"`:''}><div class="gem" style="${mFx(L)}">${g.emoji}</div><div class="gt">${who}</div>${L?`<div class="lmt">لیمیتد ${limTag(L)}</div>`:''}<div class="gsub">${esc(g.name)}${g.converted?'':` · ⭐ ${g.price}`}</div>${g.note?`<div class="gnote">${esc(g.note)}</div>`:''}${act}</div>`}
+async function convertGift(id){try{const j=await api('/gifts/'+id+'/convert','POST');me.stars=j.stars;toast('⭐ '+j.back+' به حساب شما اضافه شد')}catch(e){toast(e.message)}}
+async function loadGifts(u,isMe,path){
+  const box=$('#pgifts');if(!box)return;
+  try{const {gifts}=await api(path||('/users/'+u.id+'/gifts'));
+    $('#pgn').textContent=gifts.length?'· '+gifts.length:'';
+    box.innerHTML=gifts.length?gifts.map((g,i)=>`<button class="gtile ${g.hidden?'dim':''}" data-i="${i}" ${g.limited?`style="${gBg(g.limited)};color:#fff"`:''}><span style="${mFx(g.limited)}">${g.emoji}</span><b ${g.limited?'style="color:#fffc"':''}>${g.limited?'#'+g.limited.serial:'⭐ '+g.price}</b></button>`).join('')
+      :`<span class="st">${isMe?'هنوز هدیه‌ای نگرفته‌اید.':'هنوز هدیه‌ای ندارد.'}</span>`;
+    box.querySelectorAll('.gtile').forEach(b=>b.onclick=()=>giftDetail(gifts[+b.dataset.i],u,isMe))}
+  catch{box.innerHTML='<span class="st">—</span>'}
+}
+function giftDetail(g,u,isMe,fromChat){
+  const L=g.limited,back=()=>fromChat?closeModal():(u&&u.chProfile?channelProfile():openProfile(u));
+  const when=new Date(g.at).toLocaleString('fa-IR',{year:'numeric',month:'long',day:'numeric',hour:'2-digit',minute:'2-digit'});
+  const rw=(l,v)=>`<div class="gtr"><div class="gtl">${l}</div><div class="gtv">${v}</div></div>`;
+  const s=g.sender||{id:0,name:'—',username:''},T=L&&L.traits,ow=g.owner||{id:0,name:'—',username:''};
+  modal(`<div class="gd gsheet">
+    <div class="gtop"${L?` style="${gBg(L)}"`:''}>${L?gPat(L):''}<div class="gem huge" style="${mFx(L)}">${g.emoji}</div>${T?`<h3 class="gtitle w">${esc(g.name)} <span class="gsn">#${fa(L.serial)}</span></h3><div class="gmod">${esc(T.model.name)}</div>`:(L?`<div class="lmt">لیمیتد ${limTag(L)}</div>`:'')}</div>
+    ${T?'':`<h3 class="gtitle">${L?esc(g.name):'هدیه'}</h3>`}
+    <div class="gtbl">
+      ${T?rw('مالک',`<span class="gfrom">${av(ow,'xs')}<span>${esc(ow.name)}</span></span>`)
+        +rw('مدل',`${esc(T.model.name)}${pc(T.model.pct)}`)
+        +rw('نماد',`${T.symbol.emoji} ${esc(T.symbol.name)}${pc(T.symbol.pct)}`)
+        +rw('پس‌زمینه',`<i class="gbd" style="background:linear-gradient(135deg,${T.backdrop.c1},${T.backdrop.c2})"></i>${esc(T.backdrop.name)}${pc(T.backdrop.pct)}`)
+        +rw('تعداد',`${fa(L.sold)} از ${fa(L.supply)} منتشر شده`)
+        +rw('ارزش',`~⭐ ${fa(g.price)}`):''}
+      ${rw('از',`<span class="gfrom">${av(s,'xs')}<span>${esc(s.name)}</span></span>`)}
+      ${rw('تاریخ',`<span>${when}</span>`)}
+      ${T?'':rw('ارزش',`⭐ ${g.price}`)}
+      ${L&&!T?rw('شماره',`#${L.serial} از ${L.supply}`):''}
+      ${g.converted?rw('وضعیت',`تبدیل شد به ⭐ ${g.refund}`):''}
+      ${g.note?`<div class="gtn">${esc(g.note)}</div>`:''}
+    </div>
+    <div class="gtos">شرایط استفاده از استارز را مرور کنید.</div>
+    ${isMe&&!g.converted&&L?(me.premium?`<button class="btn gwr" id="gwr">${me.rawWear===g.id?'برداشتن از کنار عکس پروفایل':'👤 گذاشتن کنار عکس پروفایل'}</button>`:`<button class="btn g" id="gwr">👑 برای نمایش روی پروفایل، پریمیوم بگیرید</button>`):''}
+    ${isMe&&!g.converted?`<button class="btn g" id="gcv">تبدیل به ⭐ ${g.refund}</button>${fromChat?'':`<button class="btn g" id="ghd">${g.hidden?'نمایش در پروفایل':'پنهان کردن از پروفایل'}</button>`}`:''}
+    <button class="btn" id="gbk">باشه</button></div>`,'gcardm');
+  $('#gbk').onclick=back;
+  if($('#gwr'))$('#gwr').onclick=async()=>{if(!me.premium)return premiumShop(me);
+    try{const on=me.rawWear===g.id;me=(await api('/me','PATCH',{wearGift:on?0:g.id})).me;toast(on?'از پروفایل برداشته شد':'کنار عکس پروفایل شما نشست ✨');fromChat?closeModal():openProfile(me)}catch(e){toast(e.message)}};
+  if(isMe&&!g.converted){
+    $('#gcv').onclick=async()=>{try{const j=await api('/gifts/'+g.id+'/convert','POST');me.stars=j.stars;toast('⭐ '+j.back+' به حساب شما اضافه شد');back()}catch(e){toast(e.message)}};
+    if(!fromChat)$('#ghd').onclick=async()=>{try{await api('/gifts/'+g.id+'/hide','POST',{hidden:!g.hidden});back()}catch(e){toast(e.message)}};
+  }
+}
+async function giftShop(u){
+  const {gifts:list,limited:lim}=await api('/gifts');
+  const opt=g=>`<button class="gopt" data-k="${g.key}"><span>${g.emoji}</span><i>${esc(g.name)}</i><b>⭐ ${g.price}</b></button>`;
+  const lopt=g=>`<button class="gopt lim" data-l="${g.id}" ${g.left?'':'disabled'} style="${limBg(g.color)}"><span>${g.emoji}</span><i>${esc(g.name)}</i><b>⭐ ${g.price}</b><em>${g.left?`${g.left} از ${g.supply}`:'تمام شد'}</em></button>`;
+  modal(`<div class="gshop"><h3 style="margin:0 0 4px">${isSelf(u)?'خرید هدیه برای خودت':'ارسال هدیه به '+esc(u.name)}</h3><div class="st" style="margin-bottom:12px">موجودی شما: ⭐ ${me.stars||0}</div>
+    ${u.channel?'':`<button class="btn" id="gpm" style="margin:0 0 10px">${isSelf(u)?'👑 خرید پریمیوم برای خودم':'👑 هدیه‌ی پریمیوم برای '+esc(u.name)}</button>`}
+    ${lim.length?`<div class="gsec">💠 لیمیتد</div><div class="ggrid">${lim.map(lopt).join('')}</div><div class="gsec">هدیه‌های معمولی</div>`:''}
+    <div class="ggrid">${list.map(opt).join('')}</div>
+    <button class="btn g" id="gx">بستن</button></div>`);
+  $('#gx').onclick=()=>closeModal();if($('#gpm'))$('#gpm').onclick=()=>premiumShop(u);
+  document.querySelectorAll('.gopt[data-k]').forEach(b=>b.onclick=()=>giftConfirm(u,list.find(g=>g.key===b.dataset.k)));
+  document.querySelectorAll('.gopt[data-l]').forEach(b=>b.onclick=()=>giftConfirm(u,lim.find(g=>g.id==b.dataset.l),true));
+}
+function giftConfirm(u,g,isLim){
+  modal(`<div class="gd"><div class="gem big">${g.emoji}</div><h3 style="margin:6px 0 2px">${esc(g.name)}</h3>${isLim?`<div class="lmt on">لیمیتد · ${g.left} از ${g.supply} باقی مانده</div>`:''}<div class="st">⭐ ${g.price} · موجودی شما ⭐ ${me.stars||0}</div>
+    <input class="f" id="gn" maxlength="100" placeholder="پیام همراه هدیه (اختیاری)" style="margin-top:12px">
+    <div class="err" id="gerr"></div>
+    <button class="btn" id="gok">${isSelf(u)?'خرید برای خودم':'ارسال برای '+esc(u.name)} · ⭐ ${g.price}</button><button class="btn g" id="gbk">بازگشت</button></div>`);
+  $('#gbk').onclick=()=>giftShop(u);
+  $('#gok').onclick=async()=>{const b=$('#gok');b.disabled=true;
+    try{const j=await api('/gifts/send','POST',{...(u.channel?{channel:u.channel}:{to:u.id}),...(isLim?{limited:g.id}:{gift:g.key}),note:$('#gn').value});me.stars=j.stars;if(j.level!=null)me.level=j.level;closeModal();const lvUp=isSelf(u)?'':` · +${+(g.price*0.05).toFixed(2)} لول ✨`;
+      if(u.channel){toast('هدیه به کانال ارسال شد '+g.emoji+lvUp)}else if(isSelf(u)){toast('هدیه به پروفایل شما اضافه شد '+g.emoji);openProfile(me)}
+      else{toast('هدیه ارسال شد '+g.emoji+lvUp);if(!active||active.id!==u.id)openChat(u)}}
+    catch(e){$('#gerr').textContent=e.message;b.disabled=false}};
+}
+$('#msgs').addEventListener('click',e=>{const c=e.target.closest('.gmsg');if(!c||e.target.closest('.gbtn'))return;
+  const m=msgs.find(x=>x.id==c.dataset.m);if(!m||!m.gift)return;
+  const from=m.from===me.id?me:active;
+  giftDetail({...m.gift,sender:{id:from.id,name:from.name,username:from.username}},me,m.to===me.id,true)});
+$('#giftBtn').onclick=()=>{if(active)giftShop(active)};
+
+/* ---- admin ---- */
+let aqT;
+document.querySelectorAll('#atabs button').forEach(b=>b.onclick=()=>{
+  document.querySelectorAll('#atabs button').forEach(x=>x.classList.toggle('on',x===b));
+  ['u','g','c','e'].forEach(t=>$('#ap'+t).classList.toggle('hide',t!==b.dataset.t))});
+function showAdmin(){$('#auth').classList.add('hide');$('#admin').classList.remove('hide');loadAdmin();loadLimited();loadAdminCh();loadPeAdmin()}
+let acT;$('#acq').oninput=()=>{clearTimeout(acT);acT=setTimeout(loadAdminCh,250)};
+async function loadAdminCh(){
+  let channels;try{({channels}=await api('/admin/channels?q='+encodeURIComponent($('#acq').value.trim())))}catch(e){$('#achs').innerHTML=`<div class="st">${esc(e.message)}</div>`;return}
+  $('#achs').innerHTML=channels.map(c=>`<div class="ac" style="margin:6px 0"><div class="al">${chav(c,'sm')}<div class="mid"><div class="nm">${esc(c.title)}${c.pinned?' 📌':''}${c.sponsored?' <span class="spon">اسپانسر</span>':''}</div>
+    <div class="sub">@${esc(c.handle)} · مالک @${esc(c.owner)} · ${c.subs} مشترک${c.level?' · ⚡'+c.level:''}</div></div></div>
+    <div class="ab"><button class="${c.pinned?'on':''}" onclick="admCh(${c.id},{pinned:${!c.pinned}})">${c.pinned?'برداشتن پین':'📌 پین برای همه'}</button>
+    <button class="${c.sponsored?'on':''}" onclick="admCh(${c.id},{sponsored:${!c.sponsored}})">${c.sponsored?'حذف اسپانسر':'📢 اسپانسر'}</button></div></div>`).join('')||'<div class="st">کانالی پیدا نشد.</div>';
+}
+async function admCh(id,b){try{await api('/admin/channels/'+id,'POST',b);loadAdminCh()}catch(e){alert(e.message)}}
+$('#aq').oninput=()=>{clearTimeout(aqT);aqT=setTimeout(loadAdmin,250)};
+async function loadAdmin(){
+  const j=await api('/admin/users?q='+encodeURIComponent($('#aq').value.trim()));
+  $('#atotal').textContent=j.total+' کاربر';$('#apers').classList.toggle('hide',!!j.persistent);
+  const S=j.stats||{};$('#astats').innerHTML=[['کل کاربران',j.total],['آنلاین',S.online],['پریمیوم',S.premium],['مسدود',S.banned],['هنوز بدون رمز',S.legacy]].map(([l,v])=>`<div class="astat"><b>${v??0}</b><span>${l}</span></div>`).join('');
+  $('#ausers').innerHTML=j.users.map(u=>`<div class="ac ${u.banned?'bn':''}"><div class="al">${av(u,'sm')}<div class="mid">
+    <div class="nm">${nm(u)}</div><div class="sub">@${esc(u.username)}${u.number?` · <span dir="ltr">${esc(u.number)}</span>`:''}</div>
+    <div style="margin-top:4px">${u.online?'<span class="tg on">آنلاین</span>':''}${u.premium||u.until>Date.now()?`<span class="tg pr">👑 ${u.premium?'دائمی':'تا '+new Date(u.until).toLocaleDateString('fa-IR')}</span>`:''}${u.banned?'<span class="tg bn">مسدود</span>':''}${u.number?'<span class="tg lg">بدون رمز</span>':''}</div></div><div class="stz">⭐ ${u.stars}</div></div>
+    <div class="ab"><button class="${u.banned?'':'dg'}" onclick="adm(${u.id},{banned:${!u.banned}})">${u.banned?'رفع مسدودی':'🚫 مسدود'}</button>
+    <button onclick="adm(${u.id},{premium:${!u.premium}})">${u.premium?'حذف پریمیوم':'👑 پریمیوم'}</button>
+    <span class="stin"><input type="number" id="s${u.id}" placeholder="± استارز" step="1"><button onclick="addStars(${u.id})">اعمال</button></span>
+    <button class="dg" onclick="delUser(${u.id},'${esc(u.username)}')">🗑 حذف کاربر</button></div></div>`).join('')||'<div class="empty">کاربری پیدا نشد.</div>';
+}
+async function loadLimited(){
+  const {items}=await api('/admin/limited');
+  $('#alist').innerHTML=items.map(g=>`<div class="ali"><span class="alie" style="${limBg(g.color)}">${g.emoji}</span><div class="mid"><div class="nm">${esc(g.name)} ${g.active?'':'<span class="st">(متوقف)</span>'}</div>
+    <div class="sub">⭐ ${g.price} · فروخته‌شده ${g.sold} از ${g.supply}${g.left?'':' · تمام شد'}</div></div>
+    <button class="alb" onclick="limToggle(${g.id},${!g.active})">${g.active?'توقف فروش':'ادامه فروش'}</button></div>`).join('')||'<div class="st">هنوز هدیه‌ی لیمیتدی نساخته‌اید.</div>';
+}
+async function mkLimited(){
+  try{await api('/admin/limited','POST',{name:$('#ln').value,emoji:$('#le').value,price:+$('#lp').value,supply:+$('#ls').value,color:$('#lc').value});
+    ['#ln','#le','#lp','#ls'].forEach(i=>$(i).value='');$('#lerr').textContent='';loadLimited()}
+  catch(e){$('#lerr').textContent=e.message}
+}
+async function limToggle(id,active){try{await api('/admin/limited/'+id,'POST',{active});loadLimited()}catch(e){alert(e.message)}}
+async function adm(id,b){try{await api('/admin/users/'+id,'POST',b);loadAdmin()}catch(e){alert(e.message)}}
+async function delUser(id,un){
+  if(!confirm(`کاربر @${un} برای همیشه حذف شود؟\n\nحساب، پیام‌ها، هدیه‌های دریافتی و کانال‌های این کاربر پاک می‌شود و قابل بازگشت نیست.`))return;
+  try{await api('/admin/users/'+id,'DELETE');loadAdmin()}catch(e){alert(e.message)}
+}
+function addStars(id){const v=parseInt($('#s'+id).value);if(v)adm(id,{stars:v})}
+</script>
+<script>
+(()=>{const A=document.getElementById('auth'),hk=document.getElementById('husky'),pu=[...hk.querySelectorAll('.pupil')];
+const sky=document.getElementById('sky');for(let i=0;i<26;i++){const d=document.createElement('i');d.className='st1';d.style.cssText=`top:${Math.random()*100}%;left:${Math.random()*100}%;animation-delay:${Math.random()*3}s;animation-duration:${2+Math.random()*3}s`;sky.appendChild(d)}
+function look(x,y){const r=hk.getBoundingClientRect(),cx=r.left+r.width/2,cy=r.top+r.height*.5,dx=x-cx,dy=y-cy,d=Math.hypot(dx,dy)||1,k=Math.min(1,d/200);pu.forEach(p=>p.style.transform=`translate(${dx/d*6*k}px,${dy/d*5*k}px)`)}
+addEventListener('pointermove',e=>{if(!A.classList.contains('hide')&&!hk.classList.contains('cover'))look(e.clientX,e.clientY)});
+function stagger(root){[...root.children].forEach((e,i)=>{e.classList.remove('rise');void e.offsetWidth;e.style.setProperty('--i',i);e.classList.add('rise')})}
+stagger(A.querySelector('.box'));stagger(document.getElementById('fl'));
+const tabs=A.querySelector('.tabs');
+for(const [id,s,f] of [['tl',0,'fl'],['ts',1,'fs']])document.getElementById(id).addEventListener('click',()=>{tabs.classList.toggle('s',!!s);stagger(document.getElementById(f))});
+A.querySelectorAll('input').forEach(i=>{
+ if(i.type==='password'){i.addEventListener('focus',()=>hk.classList.add('cover'));i.addEventListener('blur',()=>hk.classList.remove('cover','peek'))}
+ else if(i.type==='text'){const g=()=>{const r=i.getBoundingClientRect();look(r.right-Math.min(i.value.length*9+20,r.width),r.top+r.height/2+30)};i.addEventListener('input',g);i.addEventListener('focus',g)}});
+A.querySelectorAll('.eyeb').forEach(b=>{b.addEventListener('mousedown',e=>e.preventDefault());b.addEventListener('click',()=>{const i=b.previousElementSibling.previousElementSibling,on=i.type==='password';i.type=on?'text':'password';b.classList.toggle('on',on);hk.classList.toggle('peek',on);i.focus()})});
+new MutationObserver(()=>{const e=document.getElementById('err');if(e.textContent){const f=A.querySelector('form:not(.hide)');f.classList.remove('shake');void f.offsetWidth;f.classList.add('shake')}}).observe(document.getElementById('err'),{childList:true,characterData:true,subtree:true});
+window.doorThen=async fn=>{const b=document.getElementById('goBtn'),w=ms=>new Promise(r=>setTimeout(r,ms));
+ if(matchMedia('(prefers-reduced-motion:reduce)').matches)return fn();
+ hk.classList.remove('cover','peek');b.classList.add('dooropen');hk.classList.add('happy');await w(380);b.classList.add('walking','out');await w(780);fn();
+ setTimeout(()=>{b.classList.remove('dooropen','walking','out');hk.classList.remove('happy')},400)};
+})();
+</script>
+<script>
+(()=>{if(matchMedia('(prefers-reduced-motion:reduce)').matches)return;
+const E='cubic-bezier(.2,.9,.3,1.15)',key=e=>{const d=e.dataset;return d.mid||d.m||d.id||d.p||e.className+'|'+e.textContent.slice(0,60)};
+function fx(el,from,delay=0,dur=340){el.animate([{opacity:0,transform:from},{opacity:1,transform:'none'}],{duration:dur,easing:E,delay,fill:'backwards'})}
+function watch(sel,kind){const box=document.querySelector(sel);if(!box)return;let seen=new Set();
+ new MutationObserver(()=>{const kids=[...box.children].filter(e=>e.nodeType===1);if(!kids.length){seen=new Set();return}
+  const fresh=kids.filter(e=>!seen.has(key(e)));kids.forEach(e=>seen.add(key(e)));
+  if(!fresh.length)return;
+  if(fresh.length>1&&fresh.length===kids.length){seen=new Set(kids.map(key));fresh.slice(-14).forEach((e,i)=>fx(e,kind==='row'?'translateX(30px)':'translateY(14px) scale(.96)',i*35,380))}
+  else fresh.forEach(e=>{const out=e.classList.contains('out');fx(e,kind==='row'?'translateX(30px)':e.classList.contains('b')?`translate(${out?30:-30}px,14px) scale(.85)`:'translateY(14px) scale(.9)',0,360)})
+ }).observe(box,{childList:true})}
+['#msgs','#posts','#gmsgs'].forEach(s=>watch(s,'msg'));watch('#list','row');
+})();
+</script>
+<script>
+let groups=[],grp=null,gmsgs=[],gReply=null;
+const gav=(g,c='')=>`<div class="av ${c}" style="background:${COL[g.id%7]}">${esc([...g.title][0]||'؟')}</div>`;
+async function loadGroups(){try{groups=(await api('/groups')).groups}catch{return}
+  const n=groups.reduce((a,g)=>a+(g.unread||0),0);$('#tabg').innerHTML='گروه‌ها'+(n?`<span class="bdg">${n}</span>`:'');
+  if(!searching&&tabMode==='groups')renderList()}
+function renderGroups(){
+  $('#list').innerHTML=groups.length?groups.map(g=>`<div class="row ${grp&&grp.id===g.id?'on':''}" data-g="${g.id}">${gav(g)}<div class="mid"><div class="l1"><span class="nm">${esc(g.title)}</span><span class="tm">${g.last?short(g.last.at):''}</span></div>
+    <div class="l2"><span class="sub">${g.last?esc((g.last.from===me.id?'شما':g.last.name)+': '+String(g.last.body).replace(/:pe\d+:/g,'🙂')):g.members+' عضو'}</span>${g.unread?`<span class="bdg">${g.unread}</span>`:''}</div></div></div>`).join('')
+    :'<div class="empty">هنوز گروهی ندارید.<br>با دکمه‌ی «گروه جدید» یکی بسازید.</div>';
+  $('#list').querySelectorAll('[data-g]').forEach(r=>r.onclick=()=>gOpen(+r.dataset.g))}
+function newGroup(){
+  modal(`<h3 style="margin:0 0 10px">گروه جدید</h3><input class="f" id="gt" maxlength="60" placeholder="نام گروه">
+    ${chats.length?`<div class="st" style="text-align:right">از گفتگوهایتان انتخاب کنید:</div><div class="gpick">${chats.map(c=>`<label class="gpk"><input type="checkbox" value="${esc(c.user.username)}">${av(c.user,'sm')}<span>${esc(c.user.name)}</span></label>`).join('')}</div>`:''}
+    <input class="f" id="gu" placeholder="نام‌کاربری‌های دیگر (با کاما جدا کنید)" dir="ltr" style="margin-top:6px"><div class="err" id="gerr2"></div>
+    <button class="btn" id="gok2">ساخت گروه</button><button class="btn g" onclick="closeModal()">انصراف</button>`,'gnew');
+  $('#gok2').onclick=async()=>{const b=$('#gok2');b.disabled=true;
+    const names=[...document.querySelectorAll('.gpk input:checked')].map(i=>i.value).concat($('#gu').value.split(/[,\s،]+/).filter(Boolean));
+    try{const r=await api('/groups','POST',{title:$('#gt').value,members:names});closeModal();await loadGroups();gOpen(r.id)}
+    catch(e){$('#gerr2').textContent=e.message;b.disabled=false}}}
+async function gOpen(id){
+  try{const r=await api('/groups/'+id+'/messages');grp=r.group;gmsgs=r.messages;gReplyClear();
+    ['#none','#chat','#chan'].forEach(x=>$(x).classList.add('hide'));active=null;cur=null;
+    $('#gchat').classList.remove('hide');$('#app').classList.add('open');gHead();gRender();gRead();renderList();if(!isTouch())$('#gin').focus()}
+  catch(e){toast(e.message)}}
+function gHead(){$('#gh').innerHTML=`${gav(grp,'sm')}<div><div class="nm">${esc(grp.title)}</div><div class="st">${grp.members.length} عضو</div></div>`}
+const gName=id=>{const u=grp&&grp.members.find(x=>x.id===id);return u?u.name:'عضو سابق'};
+function gRender(){const box=$('#gmsgs');let h='',prev=0;
+  gmsgs.forEach(m=>{if(!prev||!same(prev,m.at))h+=`<div class="day">${dy(m.at)}</div>`;prev=m.at;const o=m.from===me.id,can=o||grp.owner===me.id;
+    const rq=m.reply?`<div class="rq" data-go="${m.reply.id}"><b>${m.reply.from===me.id?'شما':esc(gName(m.reply.from))}</b><span>${esc(m.reply.body)}</span></div>`:'';
+    h+=`<div class="b ${o?'out':'inn'}" data-mid="${m.id}"><button class="rxb" title="واکنش" aria-label="واکنش">🙂</button><button class="rpb" title="پاسخ" aria-label="پاسخ">↩</button>${can?'<button class="dlb" title="حذف" aria-label="حذف">🗑</button>':''}${o?'':`<div class="gsn" style="color:${COL[m.sender.id%7]}">${esc(m.sender.name)}</div>`}${rq}<span>${peTxt(esc(m.body))}</span><i>${hm(m.at)}</i>${mrxHtml(m)}</div>`});
+  box.innerHTML=h;box.scrollTop=box.scrollHeight}
+function gRead(){if(grp)api('/groups/'+grp.id+'/read','POST').then(loadGroups).catch(()=>{})}
+function gClose(){$('#gchat').classList.add('hide');$('#none').classList.remove('hide');$('#app').classList.remove('open');grp=null;closeModal();renderList()}
+async function gRefresh(){if(!grp)return;try{grp=(await api('/groups/'+grp.id)).group;gHead();gRender()}catch{gClose()}}
+function gOnMsg(m){const open=grp&&grp.id===m.groupId&&$('#gchat').offsetParent;
+  if(open){if(!gmsgs.some(x=>x.id===m.id)){gmsgs.push(m);gRender()}if(m.from!==me.id)gRead()}loadGroups()}
+function gOnDel({groupId,id}){if(grp&&grp.id===groupId){gmsgs=gmsgs.filter(m=>m.id!==id);keep($('#gmsgs'),gRender)}loadGroups()}
+function gOnChange(d){loadGroups();if(grp&&d.id===grp.id){if(d.deleted||d.removed===me.id){gClose();toast(d.deleted?'گروه حذف شد':'از گروه خارج شدید')}else gRefresh()}}
+async function gSend(){const t=$('#gin'),body=t.value.trim();if(!body||!grp)return;const rp=gReply;t.value='';t.style.height='auto';gReplyClear();
+  try{await api('/groups/'+grp.id+'/messages','POST',{body,replyTo:rp?rp.id:undefined})}catch(e){toast(e.message);t.value=body}if(!isTouch())t.focus()}
+function gSetReply(id){const m=gmsgs.find(x=>x.id===id);if(!m)return;gReply=m;$('#grbn').textContent=m.from===me.id?'شما':m.sender.name;$('#grbt').textContent=m.body;$('#grbar').classList.remove('hide');if(!isTouch())$('#gin').focus()}
+function gReplyClear(){gReply=null;const b=$('#grbar');if(b)b.classList.add('hide')}
+$('#grbx').onclick=gReplyClear;$('#gsend').onclick=gSend;$('#gback').onclick=()=>{gReplyClear();gClose()};$('#gh').onclick=()=>gInfo();
+$('#gin').onkeydown=e=>{if(e.key==='Enter'&&!e.shiftKey&&!e.isComposing){e.preventDefault();gSend()}};
+$('#gin').oninput=e=>{e.target.style.height='auto';e.target.style.height=e.target.scrollHeight+'px'};
+function ask(title,btns){modal(`<h3 style="margin:0 0 6px">${title}</h3>${btns.map((b,i)=>`<button class="btn ${b[2]||'g'}" data-i="${i}">${b[0]}</button>`).join('')}<button class="btn g" onclick="closeModal()">انصراف</button>`);
+  document.querySelectorAll('#modal [data-i]').forEach(x=>x.onclick=async()=>{try{await btns[x.dataset.i][1]();closeModal()}catch(e){toast(e.message)}})}
+$('#gmsgs').addEventListener('click',e=>{const bub=e.target.closest('.b[data-mid]');if(!bub)return;const id=+bub.dataset.mid;
+  if(e.target.closest('.rpb')){gSetReply(id);bub.classList.remove('sel');return}
+  if(e.target.closest('.dlb')){ask('این پیام برای همه حذف شود؟',[['حذف برای همه',()=>api('/groups/'+grp.id+'/messages/'+id,'DELETE'),'dgr']]);return}
+  const go=e.target.closest('.rq');if(go){const t=$('#gmsgs').querySelector(`.b[data-mid="${go.dataset.go}"]`);if(!t){toast('پیام اصلی در بخش بالاتر گفتگو است');return}
+    t.scrollIntoView({block:'center',behavior:'smooth'});t.classList.remove('flash');void t.offsetWidth;t.classList.add('flash');return}
+  const was=bub.classList.contains('sel');$('#gmsgs').querySelectorAll('.b.sel').forEach(x=>x.classList.remove('sel'));if(!was&&isTouch())bub.classList.add('sel')});
+$('#gmsgs').addEventListener('dblclick',e=>{const b=e.target.closest('.b[data-mid]');if(b&&!e.target.closest('.rq'))gSetReply(+b.dataset.mid)});
+$('#msgs').addEventListener('click',e=>{const d=e.target.closest('.dlb');if(!d)return;const id=+d.closest('.b').dataset.mid,m=msgs.find(x=>x.id===id);if(!m)return;
+  const btns=[['حذف فقط برای من',()=>api('/messages/'+id,'DELETE')]];if(m.from===me.id)btns.unshift(['حذف برای همه',()=>api('/messages/'+id+'?all=1','DELETE'),'dgr']);
+  ask('این پیام حذف شود؟',btns)});
+async function gInfo(){if(!grp)return;try{grp=(await api('/groups/'+grp.id)).group}catch{return gClose()}gHead();const own=grp.owner===me.id;
+  modal(`<h3 style="margin:0 0 4px">${esc(grp.title)}</h3><div class="st">${grp.members.length} عضو</div>
+    ${own?`<div style="display:flex;gap:6px;margin-top:10px"><input class="f" id="gren" maxlength="60" value="${esc(grp.title)}" style="margin:0"><button class="btn" id="grenb" style="width:auto;padding:0 16px;margin:0">✓</button></div>`:''}
+    <div class="gl">${grp.members.map(u=>`<div class="gm">${av(u,'sm')}<div class="mid"><div class="nm">${nm(u)}${u.id===grp.owner?' 👑':''}</div><div class="sub">@${esc(u.username)}</div></div>${own&&u.id!==me.id?`<button class="gx" data-u="${u.id}" title="حذف از گروه">✕</button>`:''}</div>`).join('')}</div>
+    ${own?`<div style="display:flex;gap:6px;margin-top:6px"><input class="f" id="gadd" placeholder="افزودن عضو (@نام‌کاربری)" dir="ltr" style="margin:0"><button class="btn" id="gaddb" style="width:auto;padding:0 16px;margin:0">＋</button></div>`:''}
+    <div class="err" id="gerr3"></div><button class="btn g" id="glv">خروج از گروه</button>${own?'<button class="btn dgr" id="gdel">حذف گروه</button>':''}<button class="btn g" onclick="closeModal()">بستن</button>`,'ginfo');
+  const run=async f=>{try{await f()}catch(e){$('#gerr3').textContent=e.message}};
+  if(own){$('#grenb').onclick=()=>run(async()=>{await api('/groups/'+grp.id,'PATCH',{title:$('#gren').value});await gInfo()});
+    $('#gaddb').onclick=()=>run(async()=>{await api('/groups/'+grp.id+'/members','POST',{username:$('#gadd').value});await gInfo()});
+    document.querySelectorAll('#modal .gx').forEach(b=>b.onclick=()=>run(async()=>{await api('/groups/'+grp.id+'/members/'+b.dataset.u,'DELETE');await gInfo()}));
+    $('#gdel').onclick=()=>ask('گروه برای همه حذف شود؟',[['حذف گروه',()=>api('/groups/'+grp.id,'DELETE'),'dgr']])}
+  $('#glv').onclick=()=>ask('از گروه خارج می‌شوید؟',[['خروج از گروه',()=>api('/groups/'+grp.id+'/members/'+me.id,'DELETE'),'dgr']])}
+</script>
+<script>
+let PEL=[];
+const peOf=k=>PEL.find(e=>'pe:'+e.id===k);
+const peImg=k=>{const e=peOf(k);return e?`<img class="cem pei" draggable="false" src="${esc(e.url)}" alt="">`:''};
+const peTxt=t=>t.replace(/:pe(\d+):/g,(m,i)=>{const e=PEL.find(x=>x.id==i);return e?`<img class="cem pei t" draggable="false" src="${esc(e.url)}" alt="">`:''});
+const plainPe=t=>esc(String(t||'').replace(/:pe\d+:/g,'🙂'));
+const keep=(box,f)=>{const t=box.scrollTop;f();box.scrollTop=t};
+function pRerender(){if(active)keep($('#msgs'),renderMsgs);if(typeof grp!=='undefined'&&grp)keep($('#gmsgs'),gRender);if(cur)renderChan(true);if(!$('#emop').classList.contains('hide'))renderEmo()}
+async function loadPE(){try{PEL=(await api('/pemojis')).emojis;pRerender()}catch{}}
+function mrxHtml(m){const R={};(m.rx||[]).forEach(([u,k])=>{if(/^pe:/.test(k)&&!peOf(k))return;const r=R[k]||(R[k]={n:0,mine:0});r.n++;if(u===me.id)r.mine=1});
+  const ks=Object.keys(R);return ks.length?`<div class="mrx">${ks.map(k=>`<button class="mrc ${R[k].mine?'mine':''}" data-k="${k}">${rxK(k)} <b>${R[k].n}</b></button>`).join('')}</div>`:''}
+function mrxSend(scope,id,k,r){if(/^pe:/.test(k)&&!me.premium)return premiumShop(me);
+  api(scope==='d'?'/messages/'+id+'/react':'/groups/'+grp.id+'/messages/'+id+'/react','POST',{kind:k}).then(j=>{if(j&&j.rx&&j.rx.some(x=>x[0]===me.id&&x[1]===k))burst(k,r)}).catch(e=>toast(e.message))}
+function mrxPop(el,scope,id){closePop();const d=document.createElement('div');d.id='rxpop';
+  const bt=(k,lock)=>`<button class="pk ${lock?'lock':''}" data-k="${k}">${rxK(k)}</button>`;
+  d.innerHTML=`<div class="pkg">${FREE.map(k=>bt(k)).join('')+PEL.map(e=>bt('pe:'+e.id,!me.premium)).join('')}</div>`;document.body.appendChild(d);
+  const r=el.getBoundingClientRect(),w=d.offsetWidth,h=d.offsetHeight;let top=r.top-h-6;if(top<8)top=r.bottom+6;
+  d.style.top=top+'px';d.style.left=Math.max(8,Math.min(r.left,innerWidth-w-8))+'px';
+  d.onclick=e=>{const b=e.target.closest('.pk');if(!b)return;const rc=b.getBoundingClientRect();closePop();mrxSend(scope,id,b.dataset.k,rc)}}
+function mrxBind(sel,scope){$(sel).addEventListener('click',e=>{const c=e.target.closest('.mrc'),p=e.target.closest('.rxb');if(!c&&!p)return;
+  const bub=e.target.closest('.b[data-mid]');if(!bub)return;const id=+bub.dataset.mid;
+  if(c)mrxSend(scope,id,c.dataset.k,c.getBoundingClientRect());else mrxPop(p,scope,id)})}
+mrxBind('#msgs','d');mrxBind('#gmsgs','g');
+$('#emoBtn').insertAdjacentHTML('afterend','');
+$('#gchat .comp').insertAdjacentHTML('afterbegin','<button class="giftb" id="gemoBtn" title="ایموجی" aria-label="ایموجی">😊</button>');
+$('#gemoBtn').onclick=()=>{const p=$('#emop');if(p.classList.contains('hide')||emoT!=='#gin'){emoT='#gin';$('#gchat').insertBefore(p,$('#gchat .comp'));renderEmo();p.classList.remove('hide')}else closeEmo()};
+/* ---- ادمین: ساخت ایموجی پریمیوم ---- */
+let peData='';
+$('#peFile').onchange=e=>{const f=e.target.files[0];peData='';$('#peAdd').disabled=true;$('#peErr').textContent='';$('#pePrev').innerHTML='';if(!f)return;
+  const im=new Image(),u=URL.createObjectURL(f);im.onerror=()=>{$('#peErr').textContent='فایل عکس معتبر نیست'};
+  im.onload=()=>{const k=Math.min(1,160/Math.max(im.width,im.height)),c=document.createElement('canvas');c.width=Math.max(1,Math.round(im.width*k));c.height=Math.max(1,Math.round(im.height*k));
+    c.getContext('2d').drawImage(im,0,0,c.width,c.height);URL.revokeObjectURL(u);peData=c.toDataURL('image/png');
+    $('#pePrev').innerHTML=`<img class="pei" style="width:64px;height:64px;background:#8883;border-radius:12px" src="${peData}" alt="">`;$('#peAdd').disabled=false};im.src=u};
+$('#peAdd').onclick=async()=>{if(!peData)return;const b=$('#peAdd');b.disabled=true;
+  try{const r=await api('/admin/pemojis','POST',{image:peData});peData='';$('#peFile').value='';$('#pePrev').innerHTML='';peDraw(r.emojis)}catch(e){$('#peErr').textContent=e.message;b.disabled=false}};
+function peDraw(list){$('#peGrid').innerHTML=list.length?list.map(e=>`<div class="ceit"><img class="pei" src="${esc(e.url)}" alt=""><button class="gx" data-id="${e.id}" title="حذف">✕</button></div>`).join(''):'<div class="st">هنوز ایموجی‌ای نساخته‌اید.</div>';
+  $('#peGrid').querySelectorAll('.gx').forEach(b=>b.onclick=async()=>{if(!confirm('این ایموجی و ری‌اکشن‌هایش حذف شود؟'))return;try{peDraw((await api('/admin/pemojis/'+b.dataset.id,'DELETE')).emojis)}catch(e){alert(e.message)}})}
+async function loadPeAdmin(){try{peDraw((await api('/admin/pemojis')).emojis)}catch{}}
+</script>
+<script>
+(function(){
+const IC={
+ chat:'<svg viewBox="0 0 24 24"><path d="M21 12a8 8 0 0 1-11.5 7.2L4 20l1-4.3A8 8 0 1 1 21 12z"/><path d="M8.5 11h7M8.5 14h4"/></svg>',
+ con:'<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="10" r="3"/><path d="M6.5 18.5c1.5-2.5 3.2-3.5 5.5-3.5s4 1 5.5 3.5"/></svg>',
+ set:'<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg>'};
+const nav=document.getElementById('bnav'),pg=document.getElementById('pg');
+let cur='chats',ton=null;
+function badge(){return chats.reduce((a,c)=>a+(c.unread||0),0)}
+function drawNav(){
+  const n=badge();
+  nav.innerHTML=
+   `<button data-n="chats" class="${cur==='chats'?'on':''}">${IC.chat}گفتگوها${n?`<span class="nb">${n}</span>`:''}</button>`+
+   `<button data-n="contacts" class="${cur==='contacts'?'on':''}">${IC.con}مخاطبین</button>`+
+   `<button data-n="settings" class="${cur==='settings'?'on':''}">${IC.set}تنظیمات</button>`+
+   `<button data-n="profile" class="${cur==='profile'?'on':''}">${av(me,'sm')}پروفایل</button>`;
+  nav.querySelectorAll('button').forEach(b=>b.onclick=()=>go(b.dataset.n));
+}
+function go(n){
+  if(n==='profile'){openProfile(me);return}
+  cur=n;pg.classList.toggle('show',n==='contacts'||n==='settings');
+  if(n==='contacts')drawContacts();else if(n==='settings')drawSettings();
+  else if(typeof setTab==='function')setTab('chats');
+  drawNav();
+}
+function drawContacts(){
+  const list=chats.map(c=>c.user);
+  pg.innerHTML=`<h2>مخاطبین</h2><input class="cfilter" id="cf" placeholder="جستجو در مخاطبین"><div id="cl"></div>`;
+  const paint=q=>{const f=list.filter(u=>!q||(u.name+' '+u.username).toLowerCase().includes(q));
+    document.getElementById('cl').innerHTML=f.length?f.map(u=>`<div class="row" data-id="${u.id}">${av(u)}<div class="mid"><div class="nm">${nm(u)}</div><div class="sub">@${esc(u.username)}</div></div></div>`).join(''):'<div class="empty">مخاطبی نیست.<br>از «گفتگوها» با @نام‌کاربری کسی را پیدا کنید.</div>';
+    document.querySelectorAll('#cl [data-id]').forEach(r=>r.onclick=()=>{const u=list.find(x=>x.id==r.dataset.id);pg.classList.remove('show');cur='chats';drawNav();openChat(u)})};
+  paint('');document.getElementById('cf').oninput=e=>paint(e.target.value.trim().toLowerCase());
+}
+async function drawSettings(){
+  if(!ton){try{ton=(await api('/gifts')).ton}catch{}}
+  const st=me.stars||0,r=ton&&ton.rate>0?ton.rate:0;
+  const t=r?st/r:0,usd=r&&ton.usd?t*ton.usd:0;
+  const row=(id,bg,ic,t1,t2,cls='')=>`<button class="srow ${cls}" id="${id}"><span class="ic" style="background:${bg}">${ic}</span><span class="tx">${t1}${t2?`<small>${t2}</small>`:''}</span></button>`;
+  pg.innerHTML=`<h2>تنظیمات</h2>
+  <div class="pgh">${av(me)}<b>${nm(me)}</b><span>${me.number?esc(me.number)+' • ':''}@${esc(me.username)}</span></div>
+  <div class="wcard" id="wc"><div class="wc">NOVIN GRAM WALLET</div><div><div class="wb">⭐ ${st.toLocaleString('en')}</div><div class="wu">${r?`≈ ${t.toFixed(3)} TON · $${usd.toFixed(2)}`:'—'}</div></div><div class="wn">${esc(me.name)}</div><div class="wq">💎</div></div>
+  <div class="wbtns"><button class="btn" id="sPrem">👑 پریمیوم</button><button class="btn g" id="sGift">🎁 خرید هدیه</button></div>
+  <div class="srows">
+   ${row('sAcc','#3390ec','👤','حساب کاربری','نام، بیو، عکس و رنگ‌ها')}
+   ${row('sPriv','#4caf50','🔑','حریم خصوصی و امنیت',me.number?'تنظیم رمز و حذف شماره':'تغییر رمز')}
+   ${row('sProf','#8e5bff','🪪','پروفایل من','هدیه‌ها، لول و پست‌ها')}
+   ${row('sOut','#e53935','⎋','خروج از حساب','','red')}
+  </div>`;
+  const $=s=>pg.querySelector(s);
+  $('#wc').onclick=()=>openProfile(me);
+  $('#sPrem').onclick=()=>premiumShop(me);$('#sGift').onclick=()=>giftShop(me);
+  $('#sAcc').onclick=()=>editProfile();$('#sPriv').onclick=()=>setPassword();$('#sProf').onclick=()=>openProfile(me);
+  $('#sOut').onclick=async()=>{try{await api('/logout','POST')}catch{}location.reload()};
+}
+// کلیک روی هر گفتگو: صفحه‌ی روی لیست بسته شود
+const _open=window.openChat;
+window.openChat=function(u){pg.classList.remove('show');if(cur!=='chats'){cur='chats';drawNav()}return _open.apply(this,arguments)};
+const _lc=window.loadChats;
+window.loadChats=async function(){const r=await _lc.apply(this,arguments);drawNav();return r};
+const _st=window.start;
+window.start=function(){const r=_st.apply(this,arguments);try{drawNav()}catch{}return r};
+// آپدیت زنده‌ی موجودی ⭐ و بج
+setInterval(()=>{if(cur==='settings'&&pg.classList.contains('show')&&!document.querySelector('#modal:not(.hide)'))drawSettings();else if(!document.hidden)drawNav()},5000);
+if(typeof me!=='undefined'&&me&&!document.getElementById('app').classList.contains('hide'))drawNav();
+})();
+</script>
+</body>
+</html>
